@@ -13,6 +13,8 @@
 #include <caml/misc.h>
 #include <caml/mlvalues.h>
 
+#include <string.h>
+
 static struct custom_operations mt19937ar_ops = {
 	.identifier = "jp.halfmoon.panathenaia.mt.mt19937ar",
 	.finalize = custom_finalize_default,
@@ -50,6 +52,17 @@ CAMLprim value ENTRY(mt19937ar_make_int32_array)(value val_seed)
 		init_key[i] = Int32_val(Field(val_seed, i));
 	}
 	init_by_array(mt19937ar_val(val_result), init_key, key_length);
+	CAMLreturn(val_result);
+}
+
+CAMLprim value ENTRY(mt19937ar_copy)(value val_source)
+{
+	CAMLparam1(val_source);
+	CAMLlocal1(val_result);
+	val_result = caml_alloc_custom(&mt19937ar_ops, sizeof(struct mt19937ar), 0, 1);
+	memcpy(
+		mt19937ar_val(val_result), mt19937ar_val(val_source),
+		sizeof(struct mt19937ar));
 	CAMLreturn(val_result);
 }
 
