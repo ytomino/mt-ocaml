@@ -54,7 +54,7 @@
 #define LOWER_MASK 0x7fffffffUL /* least significant r bits */
 
 static uint32_t mt[N]; /* the array for the state vector  */
-static int mti=N+1; /* mti==N+1 means mt[N] is not initialized */
+static int mti;
 
 /* initializes mt[N] with a seed */
 void init_genrand(uint32_t s)
@@ -106,9 +106,6 @@ uint32_t genrand_int32(void)
 
     if (mti >= N) { /* generate N words at one time */
         int kk;
-
-        if (mti == N+1)   /* if init_genrand() has not been called, */
-            init_genrand(5489UL); /* a default initial seed is used */
 
         for (kk=0;kk<N-M;kk++) {
             y = (mt[kk]&UPPER_MASK)|(mt[kk+1]&LOWER_MASK);
