@@ -45,30 +45,32 @@
 
 #include <stdint.h>
 
+struct mt19937ar;
+
 /* initializes mt[N] with a seed */
-void init_genrand(uint32_t s);
+void init_genrand(struct mt19937ar *st, uint32_t s);
 
 /* initialize by an array with array-length */
 /* init_key is the array for initializing keys */
 /* key_length is its length */
 /* slight change for C++, 2004/2/26 */
-void init_by_array(uint32_t init_key[], int key_length);
+void init_by_array(struct mt19937ar *st, uint32_t init_key[], int key_length);
 
 /* generates a random number on [0,0xffffffff]-interval */
-uint32_t genrand_int32(void);
+uint32_t genrand_int32(struct mt19937ar *st);
 
 /* generates a random number on [0,0x7fffffff]-interval */
-long genrand_int31(void);
+long genrand_int31(struct mt19937ar *st);
 
 /* These real versions are due to Isaku Wada, 2002/01/09 added */
 /* generates a random number on [0,1]-real-interval */
-double genrand_real1(void);
+double genrand_real1(struct mt19937ar *st);
 
 /* generates a random number on [0,1)-real-interval */
-double genrand_real2(void);
+double genrand_real2(struct mt19937ar *st);
 
 /* generates a random number on (0,1)-real-interval */
-double genrand_real3(void);
+double genrand_real3(struct mt19937ar *st);
 
 /* generates a random number on [0,1) with 53-bit resolution*/
-double genrand_res53(void);
+double genrand_res53(struct mt19937ar *st);

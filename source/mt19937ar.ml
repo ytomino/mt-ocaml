@@ -1,4 +1,4 @@
-type t = unit;;
+type t;;
 
 external make_int32: int32 -> t = "mlmt_mt19937ar_make_int32";;
 external make_int32_array: int32 array -> t =

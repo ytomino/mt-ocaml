@@ -53,13 +53,17 @@
 #define UPPER_MASK 0x80000000UL /* most significant w-r bits */
 #define LOWER_MASK 0x7fffffffUL /* least significant r bits */
 
-static uint32_t mt[N]; /* the array for the state vector  */
-static int mti;
+struct mt19937ar {
+    uint32_t mt[N]; /* the array for the state vector  */
+    int mti;
+};
 
 /* initializes mt[N] with a seed */
-void init_genrand(uint32_t s)
+void init_genrand(struct mt19937ar *st, uint32_t s)
 {
-    mt[0]= s;
+    int mti;
+    uint32_t *mt = st->mt;
+    mt[0] = s;
     for (mti=1; mti<N; mti++) {
         mt[mti] = 
 	    (1812433253UL * (mt[mti-1] ^ (mt[mti-1] >> 30)) + mti); 
@@ -68,16 +72,19 @@ void init_genrand(uint32_t s)
         /* only MSBs of the array mt[].                        */
         /* 2002/01/09 modified by Makoto Matsumoto             */
     }
+    st->mti = mti;
 }
 
 /* initialize by an array with array-length */
 /* init_key is the array for initializing keys */
 /* key_length is its length */
 /* slight change for C++, 2004/2/26 */
-void init_by_array(uint32_t init_key[], int key_length)
+void init_by_array(struct mt19937ar *st, uint32_t init_key[], int key_length)
 {
     int i, j, k;
-    init_genrand(19650218UL);
+    uint32_t *mt;
+    init_genrand(st, 19650218UL);
+    mt = st->mt;
     i=1; j=0;
     k = (N>key_length ? N : key_length);
     for (; k; k--) {
@@ -98,11 +105,13 @@ void init_by_array(uint32_t init_key[], int key_length)
 }
 
 /* generates a random number on [0,0xffffffff]-interval */
-uint32_t genrand_int32(void)
+uint32_t genrand_int32(struct mt19937ar *st)
 {
     uint32_t y;
     static uint32_t const mag01[2]={0x0UL, MATRIX_A};
     /* mag01[x] = x * MATRIX_A  for x=0,1 */
+    uint32_t *mt = st->mt;
+    int mti = st->mti;
 
     if (mti >= N) { /* generate N words at one time */
         int kk;
@@ -129,40 +138,41 @@ uint32_t genrand_int32(void)
     y ^= (y << 15) & 0xefc60000UL;
     y ^= (y >> 18);
 
+    st->mti = mti;
     return y;
 }
 
 /* generates a random number on [0,0x7fffffff]-interval */
-long genrand_int31(void)
+long genrand_int31(struct mt19937ar *st)
 {
-    return (long)(genrand_int32()>>1);
+    return (long)(genrand_int32(st)>>1);
 }
 
 /* generates a random number on [0,1]-real-interval */
-double genrand_real1(void)
+double genrand_real1(struct mt19937ar *st)
 {
-    return genrand_int32()*(1.0/4294967295.0); 
+    return genrand_int32(st)*(1.0/4294967295.0);
     /* divided by 2^32-1 */ 
 }
 
 /* generates a random number on [0,1)-real-interval */
-double genrand_real2(void)
+double genrand_real2(struct mt19937ar *st)
 {
-    return genrand_int32()*(1.0/4294967296.0); 
+    return genrand_int32(st)*(1.0/4294967296.0);
     /* divided by 2^32 */
 }
 
 /* generates a random number on (0,1)-real-interval */
-double genrand_real3(void)
+double genrand_real3(struct mt19937ar *st)
 {
-    return (((double)genrand_int32()) + 0.5)*(1.0/4294967296.0); 
+    return (((double)genrand_int32(st)) + 0.5)*(1.0/4294967296.0);
     /* divided by 2^32 */
 }
 
 /* generates a random number on [0,1) with 53-bit resolution*/
-double genrand_res53(void) 
+double genrand_res53(struct mt19937ar *st)
 { 
-    uint32_t a=genrand_int32()>>5, b=genrand_int32()>>6; 
+    uint32_t a=genrand_int32(st)>>5, b=genrand_int32(st)>>6;
     return(a*67108864.0+b)*(1.0/9007199254740992.0); 
 } 
 /* These real versions are due to Isaku Wada, 2002/01/09 added */
