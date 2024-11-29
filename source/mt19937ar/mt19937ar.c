@@ -101,7 +101,7 @@ void init_by_array(uint32_t init_key[], int key_length)
 uint32_t genrand_int32(void)
 {
     uint32_t y;
-    static uint32_t mag01[2]={0x0UL, MATRIX_A};
+    static uint32_t const mag01[2]={0x0UL, MATRIX_A};
     /* mag01[x] = x * MATRIX_A  for x=0,1 */
 
     if (mti >= N) { /* generate N words at one time */
