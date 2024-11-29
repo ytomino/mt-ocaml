@@ -53,13 +53,13 @@
 #define UPPER_MASK 0x80000000UL /* most significant w-r bits */
 #define LOWER_MASK 0x7fffffffUL /* least significant r bits */
 
-static unsigned long mt[N]; /* the array for the state vector  */
+static uint32_t mt[N]; /* the array for the state vector  */
 static int mti=N+1; /* mti==N+1 means mt[N] is not initialized */
 
 /* initializes mt[N] with a seed */
-void init_genrand(unsigned long s)
+void init_genrand(uint32_t s)
 {
-    mt[0]= s & 0xffffffffUL;
+    mt[0]= s;
     for (mti=1; mti<N; mti++) {
         mt[mti] = 
 	    (1812433253UL * (mt[mti-1] ^ (mt[mti-1] >> 30)) + mti); 
@@ -67,8 +67,6 @@ void init_genrand(unsigned long s)
         /* In the previous versions, MSBs of the seed affect   */
         /* only MSBs of the array mt[].                        */
         /* 2002/01/09 modified by Makoto Matsumoto             */
-        mt[mti] &= 0xffffffffUL;
-        /* for >32 bit machines */
     }
 }
 
@@ -76,7 +74,7 @@ void init_genrand(unsigned long s)
 /* init_key is the array for initializing keys */
 /* key_length is its length */
 /* slight change for C++, 2004/2/26 */
-void init_by_array(unsigned long init_key[], int key_length)
+void init_by_array(uint32_t init_key[], int key_length)
 {
     int i, j, k;
     init_genrand(19650218UL);
@@ -85,7 +83,6 @@ void init_by_array(unsigned long init_key[], int key_length)
     for (; k; k--) {
         mt[i] = (mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 30)) * 1664525UL))
           + init_key[j] + j; /* non linear */
-        mt[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
         i++; j++;
         if (i>=N) { mt[0] = mt[N-1]; i=1; }
         if (j>=key_length) j=0;
@@ -93,7 +90,6 @@ void init_by_array(unsigned long init_key[], int key_length)
     for (k=N-1; k; k--) {
         mt[i] = (mt[i] ^ ((mt[i-1] ^ (mt[i-1] >> 30)) * 1566083941UL))
           - i; /* non linear */
-        mt[i] &= 0xffffffffUL; /* for WORDSIZE > 32 machines */
         i++;
         if (i>=N) { mt[0] = mt[N-1]; i=1; }
     }
@@ -102,10 +98,10 @@ void init_by_array(unsigned long init_key[], int key_length)
 }
 
 /* generates a random number on [0,0xffffffff]-interval */
-unsigned long genrand_int32(void)
+uint32_t genrand_int32(void)
 {
-    unsigned long y;
-    static unsigned long mag01[2]={0x0UL, MATRIX_A};
+    uint32_t y;
+    static uint32_t mag01[2]={0x0UL, MATRIX_A};
     /* mag01[x] = x * MATRIX_A  for x=0,1 */
 
     if (mti >= N) { /* generate N words at one time */
@@ -169,7 +165,7 @@ double genrand_real3(void)
 /* generates a random number on [0,1) with 53-bit resolution*/
 double genrand_res53(void) 
 { 
-    unsigned long a=genrand_int32()>>5, b=genrand_int32()>>6; 
+    uint32_t a=genrand_int32()>>5, b=genrand_int32()>>6; 
     return(a*67108864.0+b)*(1.0/9007199254740992.0); 
 } 
 /* These real versions are due to Isaku Wada, 2002/01/09 added */

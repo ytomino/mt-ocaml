@@ -18,7 +18,7 @@ CAMLprim value ENTRY(mt19937ar_make_int32_array)(value val_seed)
 {
 	CAMLparam1(val_seed); /* int32 array */
 	size_t key_length = caml_array_length(val_seed);
-	unsigned long init_key[key_length];
+	uint32_t init_key[key_length];
 	for(size_t i = 0; i < key_length; ++i){
 		init_key[i] = Int32_val(Field(val_seed, i));
 	}
