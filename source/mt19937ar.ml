@@ -65,3 +65,7 @@ let int (state: t) (bound: int) =
 		if c = 0 then int_of_unsigned_int32 (bits32 state)
 		else Int64.to_int (raw_int64 state bound64)
 	) else 0;;
+
+let int32 (state: t) (bound: int32) =
+	if bound > 1l then raw_int32 state bound
+	else 0l;;
