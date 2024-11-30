@@ -49,6 +49,12 @@ while !drawn <> 1 lsl bound - 1 do
 	let x = Mt19937ar.float s bound_float in
 	assert (x >= 0. && x < bound_float);
 	drawn := !drawn lor (1 lsl int_of_float x)
+done;
+(* bool *)
+let drawn = ref 0 in
+while !drawn <> 3 do
+	let x = Mt19937ar.bool s in
+	drawn := !drawn lor (1 lsl Bool.to_int x)
 done;;
 
 (* drawing out 0 and 1 as lowerest bit *)
@@ -124,6 +130,12 @@ for _ = 1 to 10 do
 	let _: int32 = Mt19937ar.bits32 s1 in (* Mt19937ar.float draw 64bit *)
 	let x1 = Mt19937ar.float_bits32 s1 in
 	let x2 = ldexp (floor (ldexp (Mt19937ar.float s2 1.) 32)) (-32) in
+	assert (x1 = x2)
+done;
+(* bool *)
+for _ = 1 to 10 do
+	let x1 = Int32.shift_right_logical (Mt19937ar.bits32 s1) 31 <> 0l in
+	let x2 = Mt19937ar.bool s2 in
 	assert (x1 = x2)
 done;;
 
