@@ -16,3 +16,4 @@ val int: t -> int -> int
 val int32: t -> int32 -> int32
 val int64: t -> int64 -> int64
 val nativeint: t -> nativeint -> nativeint
+val float: t -> float -> float (* [0,bound), unlike Stdlib.Random.float *)

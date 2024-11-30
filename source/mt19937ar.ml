@@ -87,3 +87,8 @@ let nativeint: t -> nativeint -> nativeint =
 	) else (
 		fun state bound -> Int64.to_nativeint (int64 state (Int64.of_nativeint bound))
 	);;
+
+let float (state: t) (bound: float) =
+	let x = Int64.shift_right_logical (bits64 state) (64 - 53) in
+	let x = ldexp (Int64.to_float x) (-53) in (* [0,1) *)
+	bound *. x;;
