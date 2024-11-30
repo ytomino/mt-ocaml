@@ -25,6 +25,14 @@ while !drawn <> 1 lsl bound - 1 do
 	let x = Mt19937ar.int32 s boundl in
 	assert (x >= 0l && x < boundl);
 	drawn := !drawn lor (1 lsl Int32.to_int x)
+done;
+(* int64 *)
+let boundL = Int64.of_int bound in
+let drawn = ref 0 in
+while !drawn <> 1 lsl bound - 1 do
+	let x = Mt19937ar.int64 s boundL in
+	assert (x >= 0L && x < boundL);
+	drawn := !drawn lor (1 lsl Int64.to_int x)
 done;;
 
 (* taking from higher bits *)
@@ -48,6 +56,14 @@ for i = 1 to 30 do
 	for _ = 1 to 10 do
 		let x1 = Int32.shift_right_logical (Mt19937ar.bits32 s1) (32 - i) in
 		let x2 = Mt19937ar.int32 s2 (Int32.shift_left 1l i) in
+		assert (x1 = x2)
+	done
+done;
+(* int64 *)
+for i = 1 to 62 do
+	for _ = 1 to 10 do
+		let x1 = Int64.shift_right_logical (draw_bits s1 i) (64 - i) in
+		let x2 = Mt19937ar.int64 s2 (Int64.shift_left 1L i) in
 		assert (x1 = x2)
 	done
 done;;

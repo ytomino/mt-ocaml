@@ -69,3 +69,14 @@ let int (state: t) (bound: int) =
 let int32 (state: t) (bound: int32) =
 	if bound > 1l then raw_int32 state bound
 	else 0l;;
+
+let int64 (state: t) (bound: int64) =
+	if bound > 1L then (
+		let c = Int64.compare bound 0x100000000L in
+		if c < 0 then (
+			let bound32 = Int64.to_int32 bound in
+			int64_of_unsigned_int32 (raw_int32 state bound32)
+		) else
+		if c = 0 then int64_of_unsigned_int32 (bits32 state)
+		else raw_int64 state bound
+	) else 0L;;

@@ -14,3 +14,4 @@ external float_bits32: t -> float = "mlmt_mt19937ar_float_bits32"
 
 val int: t -> int -> int
 val int32: t -> int32 -> int32
+val int64: t -> int64 -> int64
