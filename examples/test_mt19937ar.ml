@@ -33,6 +33,14 @@ while !drawn <> 1 lsl bound - 1 do
 	let x = Mt19937ar.int64 s boundL in
 	assert (x >= 0L && x < boundL);
 	drawn := !drawn lor (1 lsl Int64.to_int x)
+done;
+(* nativeint *)
+let boundn = Nativeint.of_int bound in
+let drawn = ref 0 in
+while !drawn <> 1 lsl bound - 1 do
+	let x = Mt19937ar.nativeint s boundn in
+	assert (x >= 0n && x < boundn);
+	drawn := !drawn lor (1 lsl Nativeint.to_int x)
 done;;
 
 (* taking from higher bits *)
@@ -64,6 +72,16 @@ for i = 1 to 62 do
 	for _ = 1 to 10 do
 		let x1 = Int64.shift_right_logical (draw_bits s1 i) (64 - i) in
 		let x2 = Mt19937ar.int64 s2 (Int64.shift_left 1L i) in
+		assert (x1 = x2)
+	done
+done;
+(* nativeint *)
+for i = 1 to Sys.word_size - 2 do
+	for _ = 1 to 10 do
+		let x1 =
+			Int64.to_nativeint (Int64.shift_right_logical (draw_bits s1 i) (64 - i))
+		in
+		let x2 = Mt19937ar.nativeint s2 (Nativeint.shift_left 1n i) in
 		assert (x1 = x2)
 	done
 done;;

@@ -80,3 +80,10 @@ let int64 (state: t) (bound: int64) =
 		if c = 0 then int64_of_unsigned_int32 (bits32 state)
 		else raw_int64 state bound
 	) else 0L;;
+
+let nativeint: t -> nativeint -> nativeint =
+	if Sys.word_size <= 32 then (
+		fun state bound -> Nativeint.of_int32 (int32 state (Nativeint.to_int32 bound))
+	) else (
+		fun state bound -> Int64.to_nativeint (int64 state (Int64.of_nativeint bound))
+	);;
