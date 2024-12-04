@@ -7,6 +7,8 @@ let int_of_unsigned_int32: int32 -> int =
 let int64_of_unsigned_int32 (x: int32) =
 	Int64.logand (Int64.of_int32 x) 0xFFFFFFFFL;;
 
+let n = 624;;
+
 type t;;
 
 external make_int32: int32 -> t = "mlmt_mt19937ar_make_int32";;
@@ -94,3 +96,13 @@ let float (state: t) (bound: float) =
 	bound *. x;;
 
 let bool (state: t) = bits31 state land 0x40000000 <> 0;;
+
+external unsafe_import: int32 array * int -> t =
+	"mlmt_mt19937ar_unsafe_import";;
+
+let import (source: int32 array * int) =
+	let mt, mti = source in
+	if Array.length mt = n && mti >= 0 && mti <= n then unsafe_import source
+	else invalid_arg "Mt19937ar.import";; (* __FUNCTION__ *)
+
+external export: t -> int32 array * int = "mlmt_mt19937ar_export";;

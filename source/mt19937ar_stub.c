@@ -9,10 +9,12 @@
 
 #include <caml/alloc.h>
 #include <caml/custom.h>
+#include <caml/fail.h>
 #include <caml/memory.h>
 #include <caml/misc.h>
 #include <caml/mlvalues.h>
 
+#include <assert.h>
 #include <string.h>
 
 static struct custom_operations mt19937ar_ops = {
@@ -87,5 +89,44 @@ CAMLprim value ENTRY(mt19937ar_float_bits32)(value val_state)
 	CAMLparam1(val_state);
 	CAMLlocal1(val_result);
 	val_result = caml_copy_double(genrand_real2(mt19937ar_val(val_state)));
+	CAMLreturn(val_result);
+}
+
+CAMLprim value ENTRY(mt19937ar_unsafe_import)(value val_source)
+{
+	CAMLparam1(val_source); /* int32 array * int */
+	CAMLlocal2(val_result, val_mt);
+	val_mt = Field(val_source, 0);
+	intnat mti = Int_val(Field(val_source, 1));
+	assert(caml_array_length(val_mt) == N && mti >= 0 && mti <= N);
+	val_result = caml_alloc_custom(&mt19937ar_ops, sizeof(struct mt19937ar), 0, 1);
+	struct mt19937ar *result = mt19937ar_val(val_result);
+	for(size_t i = 0; i < N; ++i){
+		result->mt[i] = Int32_val(Field(val_mt, i));
+	}
+	result->mti = mti;
+	CAMLreturn(val_result);
+}
+
+static value mt19937ar_export_each(char const *e)
+{
+	return caml_copy_int32((uint32_t)(uintptr_t)e);
+}
+
+CAMLprim value ENTRY(mt19937ar_export)(value val_source)
+{
+	CAMLparam1(val_source);
+	CAMLlocal2(val_result, val_mt);
+	char const *mt[N + 1];
+	struct mt19937ar const *source = mt19937ar_val(val_source);
+	for(size_t i = 0; i < N; ++i){
+		mt[i] = (char const *)(uintptr_t)source->mt[i];
+	}
+	mt[N] = NULL;
+	int mti = source->mti;
+	val_mt = caml_alloc_array(mt19937ar_export_each, mt);
+	val_result = caml_alloc_tuple(2);
+	Store_field(val_result, 0, val_mt);
+	Store_field(val_result, 1, Val_int(mti));
 	CAMLreturn(val_result);
 }
