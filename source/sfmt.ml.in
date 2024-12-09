@@ -1,0 +1,40 @@
+external get_id_string: unit -> string =
+	"mlmt_sfmt_${SFMT_MEXP}_get_id_string";;
+
+let sfmt_n = ${SFMT_MEXP} / 128 + 1;;
+
+let min_int32_array_length = sfmt_n * 4;;
+let min_int64_array_length = sfmt_n * 2;;
+
+type t;;
+
+external make_int32: int32 -> t = "mlmt_sfmt_${SFMT_MEXP}_make_int32";;
+external make_int32_array: int32 array -> t =
+	"mlmt_sfmt_${SFMT_MEXP}_make_int32_array";;
+
+external bits32: t -> int32 = "mlmt_sfmt_${SFMT_MEXP}_bits32";;
+external bits64: t -> int64 = "mlmt_sfmt_${SFMT_MEXP}_bits64";;
+external float_bits32: t -> float = "mlmt_sfmt_${SFMT_MEXP}_float_bits32";;
+external float_bits53: t -> float = "mlmt_sfmt_${SFMT_MEXP}_float_bits53";;
+
+external unsafe_fill_int32_bigarray: t ->
+	(int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t -> int ->
+	int -> unit =
+	"mlmt_sfmt_${SFMT_MEXP}_unsafe_fill_int32_bigarray";;
+
+let fill_int32_bigarray state data pos len =
+	if pos >= 0 && len >= min_int32_array_length && len mod 4 = 0
+		&& len <= Bigarray.Array1.dim data - pos
+	then unsafe_fill_int32_bigarray state data pos len
+	else invalid_arg "Sfmt_${SFMT_MEXP}.fill_int32_bigarray";; (* __FUNCTION__ *)
+
+external unsafe_fill_int64_bigarray: t ->
+	(int64, Bigarray.int64_elt, Bigarray.c_layout) Bigarray.Array1.t -> int ->
+	int -> unit =
+	"mlmt_sfmt_${SFMT_MEXP}_unsafe_fill_int64_bigarray";;
+
+let fill_int64_bigarray state data pos len =
+	if pos >= 0 && len >= min_int64_array_length && len mod 2 = 0
+		&& len <= Bigarray.Array1.dim data - pos
+	then unsafe_fill_int64_bigarray state data pos len
+	else invalid_arg "Sfmt_${SFMT_MEXP}.fill_int64_bigarray";; (* __FUNCTION__ *)

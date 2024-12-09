@@ -1,0 +1,149 @@
+#define SFMT_MEXP ${SFMT_MEXP}
+
+#include "SFMT.c"
+
+#include <caml/alloc.h>
+#include <caml/bigarray.h>
+#include <caml/custom.h>
+#include <caml/fail.h>
+#include <caml/memory.h>
+
+#define STRINGIFY(S) #S
+
+static inline sfmt_t **psfmt_val(value x)
+{
+	return Data_custom_val(x);
+}
+
+static void finalize_sfmt(value x)
+{
+	free(*psfmt_val(x));
+}
+
+static struct custom_operations sfmt_ops = {
+	.identifier = "jp.halfmoon.panathenaia.mt.sfmt_" STRINGIFY(SFMT_MEXP),
+	.finalize = finalize_sfmt,
+	.compare = custom_compare_default,
+	.hash = custom_hash_default,
+	.serialize = custom_serialize_default,
+	.deserialize = custom_deserialize_default,
+	.compare_ext = custom_compare_ext_default,
+	.fixed_length = custom_fixed_length_default};
+
+static value alloc_sfmt(void)
+{
+	CAMLparam0();
+	CAMLlocal1(val_result);
+	val_result = caml_alloc_custom_mem(&sfmt_ops, sizeof(void *), sizeof(sfmt_t));
+	sfmt_t **result = psfmt_val(val_result);
+	int error = posix_memalign((void **)result, 16, sizeof(sfmt_t));
+	if(error){
+		*result = NULL;
+		caml_raise_out_of_memory();
+	}
+	CAMLreturn(val_result);
+}
+
+#define CAT4(NAME1, NAME2, NAME3, NAME4) NAME1##NAME2##NAME3##NAME4
+#define ENTRY(NAME1, NAME2, NAME3) CAT4(mlmt_, NAME1, NAME2, NAME3)
+
+CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _get_id_string)(value val_unit)
+{
+	CAMLparam1(val_unit);
+	CAMLlocal1(val_result);
+	val_result = caml_copy_string(SFMT_IDSTR);
+	CAMLreturn(val_result);
+}
+
+CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _make_int32)(value val_seed)
+{
+	CAMLparam1(val_seed);
+	CAMLlocal1(val_result);
+	val_result = alloc_sfmt();
+	sfmt_init_gen_rand(*psfmt_val(val_result), Int32_val(val_seed));
+	CAMLreturn(val_result);
+}
+
+CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _make_int32_array)(value val_seed)
+{
+	CAMLparam1(val_seed); /* int32 array */
+	CAMLlocal1(val_result);
+	val_result = alloc_sfmt();
+	size_t key_length = caml_array_length(val_seed);
+	uint32_t init_key[key_length];
+	for(size_t i = 0; i < key_length; ++i){
+		init_key[i] = Int32_val(Field(val_seed, i));
+	}
+	sfmt_init_by_array(*psfmt_val(val_result), init_key, key_length);
+	CAMLreturn(val_result);
+}
+
+CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _bits32)(value val_state)
+{
+	CAMLparam1(val_state);
+	CAMLlocal1(val_result);
+	val_result = caml_copy_int32(sfmt_genrand_uint32(*psfmt_val(val_state)));
+	CAMLreturn(val_result);
+}
+
+CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _bits64)(value val_state)
+{
+	CAMLparam1(val_state);
+	CAMLlocal1(val_result);
+	sfmt_t *state = *psfmt_val(val_state);
+	if(state->idx % 2 != 0) caml_failwith(__FUNCTION__);
+	val_result = caml_copy_int64(sfmt_genrand_uint64(state));
+	CAMLreturn(val_result);
+}
+
+CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _float_bits32)(value val_state)
+{
+	CAMLparam1(val_state);
+	CAMLlocal1(val_result);
+	val_result = caml_copy_double(sfmt_genrand_real2(*psfmt_val(val_state)));
+	CAMLreturn(val_result);
+}
+
+CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _float_bits53)(value val_state)
+{
+	CAMLparam1(val_state);
+	CAMLlocal1(val_result);
+	val_result = caml_copy_double(sfmt_genrand_res53(*psfmt_val(val_state)));
+	CAMLreturn(val_result);
+}
+
+CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _unsafe_fill_int32_bigarray)(
+	value val_state, value val_data, value val_pos, value val_len)
+{
+	CAMLparam4(val_state, val_data, val_pos, val_len);
+	sfmt_t *state = *psfmt_val(val_state);
+	if(state->idx != SFMT_N32) caml_failwith(__FUNCTION__);
+	long len = Long_val(val_len);
+	uint32_t *p = (uint32_t *)Caml_ba_data_val(val_data) + Long_val(val_pos);
+	if(((uintptr_t)p & 15) == 0){
+		sfmt_fill_array32(state, p, len);
+	}else{
+		_Alignas(16) uint32_t array[len];
+		sfmt_fill_array32(state, array, len);
+		memcpy(p, array, sizeof(uint32_t) * len);
+	}
+	CAMLreturn(Val_unit);
+}
+
+CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _unsafe_fill_int64_bigarray)(
+	value val_state, value val_data, value val_pos, value val_len)
+{
+	CAMLparam4(val_state, val_data, val_pos, val_len);
+	sfmt_t *state = *psfmt_val(val_state);
+	if(state->idx != SFMT_N32) caml_failwith(__FUNCTION__);
+	long len = Long_val(val_len);
+	uint64_t *p = (uint64_t *)Caml_ba_data_val(val_data) + Long_val(val_pos);
+	if(((uintptr_t)p & 15) == 0){
+		sfmt_fill_array64(state, p, len);
+	}else{
+		_Alignas(16) uint64_t array[len];
+		sfmt_fill_array64(state, array, len);
+		memcpy(p, array, sizeof(uint64_t) * len);
+	}
+	CAMLreturn(Val_unit);
+}
