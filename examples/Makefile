@@ -8,6 +8,12 @@ OCAMLC=$(PROGRAMPREFIX)ocamlc
 OCAMLOPT=$(or $(filter-out $(OCAMLC),$(OCAMLC:c=opt)),$(PROGRAMPREFIX)ocamlopt)
 RLWRAP?=
 
+ifndef OCAML_VERSION_MAJOR
+ OCAML_VERSION_MAJOR:=$(basename \
+                        $(basename \
+                          $(shell $(or $(OCAMLC),$(OCAMLOPT)) -version)))
+endif
+
 DEBUG=
 ASSERT=1
 
@@ -15,7 +21,7 @@ OCAMLCFLAGS=$(and $(filter-out 0,$(DEBUG)),-g)
 OCAMLOPTFLAGS=$(OCAMLCFLAGS)
 OCAMLCFLAGS_EXE=$(and $(filter-out 0,$(DEBUG)),-g)
 OCAMLOPTFLAGS_EXE=$(OCAMLCFLAGS_EXE) $(addprefix -ccopt ,$(LDFLAGS))
-OCAML_INCLUDE_FLAGS=
+OCAML_INCLUDE_FLAGS=$(and $(filter 5,$(OCAML_VERSION_MAJOR)),-I +unix)
 LDFLAGS?=
 
 BUILDSUFFIX=.noindex
@@ -25,7 +31,7 @@ MT_BUILDDIR=$(BUILDDIR)/mt$(BUILDSUFFIX)
 BINLN=$(and $(filter $(BUILD),$(TARGET)), \
         $(if $(findstring mingw,$(BUILD))$(findstring msys,$(BUILD)),,bin))
 
-EXAMPLES=$(basename $(wildcard *.ml)) mtTest
+EXAMPLES=$(basename $(wildcard *.ml)) mtTest sfmt_test
 TESTS=$(filter test_%,$(EXAMPLES))
 
 .PHONY: all check interactive clean $(TESTS)
@@ -68,6 +74,24 @@ $(BUILDDIR)/%.opt.exe: mt19937ar/%.ml $(BUILDDIR)/mt.cmxa
 	$(OCAMLOPT) $(strip \
 		$(OCAMLOPTFLAGS_EXE) \
 		-o $@ $(OCAML_INCLUDE_FLAGS) -I $(BUILDDIR) $(filter-out $<,$^) \
+		$(BUILDDIR)/$*.cmx)
+
+$(BUILDDIR)/%.byte.exe: sfmt/%.ml $(BUILDDIR)/mt.cma
+	$(OCAMLC) $(strip \
+		-c $(OCAMLCFLAGS) \
+		-o $(BUILDDIR)/$*.cmo $(OCAML_INCLUDE_FLAGS) -I $(BUILDDIR) $<)
+	$(OCAMLC) $(strip \
+		$(OCAMLCFLAGS_EXE) \
+		-o $@ $(OCAML_INCLUDE_FLAGS) -I $(BUILDDIR) unix.cma $(filter-out $<,$^) \
+		$(BUILDDIR)/$*.cmo)
+
+$(BUILDDIR)/%.opt.exe: sfmt/%.ml $(BUILDDIR)/mt.cmxa
+	$(OCAMLOPT) $(strip \
+		-c $(OCAMLOPTFLAGS) \
+		-o $(BUILDDIR)/$*.cmx $(OCAML_INCLUDE_FLAGS) -I $(BUILDDIR) $<)
+	$(OCAMLOPT) $(strip \
+		$(OCAMLOPTFLAGS_EXE) \
+		-o $@ $(OCAML_INCLUDE_FLAGS) -I $(BUILDDIR) unix.cmxa $(filter-out $<,$^) \
 		$(BUILDDIR)/$*.cmx)
 
 $(and $(OCAMLC),$(BUILDDIR)/mt.cma) $(and $(OCAMLOPT),$(BUILDDIR)/mt.cmxa) \
