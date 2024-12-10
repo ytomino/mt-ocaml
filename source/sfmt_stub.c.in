@@ -1,5 +1,6 @@
 #define SFMT_MEXP ${SFMT_MEXP}
 
+#include "unexport.h"
 #include "SFMT.c"
 
 #include <caml/alloc.h>

@@ -135,13 +135,21 @@ struct SFMT_T {
 
 typedef struct SFMT_T sfmt_t;
 
+STATIC
 void sfmt_fill_array32(sfmt_t * sfmt, uint32_t * array, int size);
+STATIC
 void sfmt_fill_array64(sfmt_t * sfmt, uint64_t * array, int size);
+STATIC
 void sfmt_init_gen_rand(sfmt_t * sfmt, uint32_t seed);
+STATIC
 void sfmt_init_by_array(sfmt_t * sfmt, uint32_t * init_key, int key_length);
+UNUSED STATIC
 const char * sfmt_get_idstring(sfmt_t * sfmt);
+UNUSED STATIC
 int sfmt_get_min_array_size32(sfmt_t * sfmt);
+UNUSED STATIC
 int sfmt_get_min_array_size64(sfmt_t * sfmt);
+STATIC
 void sfmt_gen_rand_all(sfmt_t * sfmt);
 
 #ifndef ONLY64

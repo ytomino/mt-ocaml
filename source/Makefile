@@ -26,7 +26,8 @@ LDLIB=
 include Makefile.rules
 
 $(BUILDDIR)/mt19937ar_stub.o: private override C_INCLUDE_FLAGS+=-Imt19937ar
-$(BUILDDIR)/mt19937ar_stub.o: mt19937ar/mt19937ar.c mt19937ar/mt19937ar.h
+$(BUILDDIR)/mt19937ar_stub.o \
+: mt19937ar/mt19937ar.c mt19937ar/mt19937ar.h unexport.h
 
 $(BUILDDIR)/sfmt_19937.mli: ../source/sfmt.mli.in | $(BUILDDIR)
 	sed 's/\$${SFMT_MEXP}/19937/g' $< > $@
@@ -37,10 +38,10 @@ $(BUILDDIR)/sfmt_19937.ml: ../source/sfmt.ml.in | $(BUILDDIR)
 $(BUILDDIR)/sfmt_19937_stub.c: ../source/sfmt_stub.c.in | $(BUILDDIR)
 	sed 's/\$${SFMT_MEXP}/19937/g' $< > $@
 
-$(BUILDDIR)/sfmt_19937_stub.o: private override C_INCLUDE_FLAGS+=-Isfmt
+$(BUILDDIR)/sfmt_19937_stub.o: private override C_INCLUDE_FLAGS+=-I. -Isfmt
 $(BUILDDIR)/sfmt_19937_stub.o\
 : sfmt/SFMT.c sfmt/SFMT.h sfmt/SFMT-common.h sfmt/SFMT-params.h \
-  sfmt/SFMT-params19937.h
+  sfmt/SFMT-params19937.h unexport.h
 ifeq ($(SIMD),SSE2)
 $(BUILDDIR)/sfmt_19937_stub.o: private override CFLAGS+=-msse2 -DHAVE_SSE2
 $(BUILDDIR)/sfmt_19937_stub.o: sfmt/SFMT-sse2.h
