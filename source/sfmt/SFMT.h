@@ -180,6 +180,11 @@ inline static uint32_t sfmt_genrand_uint32(sfmt_t * sfmt) {
  * @return 64-bit pseudorandom number
  */
 inline static uint64_t sfmt_genrand_uint64(sfmt_t * sfmt) {
+    if (sfmt->idx % 2 != 0) {
+        uint32_t r1 = sfmt_genrand_uint32(sfmt);
+        uint32_t r2 = sfmt_genrand_uint32(sfmt);
+        return ((uint64_t)r2 << 32) | r1;
+    }
 #if defined(BIG_ENDIAN64) && !defined(ONLY64)
     uint32_t * psfmt32 = &sfmt->state[0].u[0];
     uint32_t r1, r2;

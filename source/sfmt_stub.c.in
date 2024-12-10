@@ -100,9 +100,7 @@ CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _bits64)(value val_state)
 {
 	CAMLparam1(val_state);
 	CAMLlocal1(val_result);
-	sfmt_t *state = *psfmt_val(val_state);
-	if(state->idx % 2 != 0) caml_failwith(__FUNCTION__);
-	val_result = caml_copy_int64(sfmt_genrand_uint64(state));
+	val_result = caml_copy_int64(sfmt_genrand_uint64(*psfmt_val(val_state)));
 	CAMLreturn(val_result);
 }
 
