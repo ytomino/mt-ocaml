@@ -12,7 +12,22 @@ The new BSD License is applied to this software, see LICENSE.txt
 *)
 (* OCaml version by YT *)
 
-module Sfmt = Sfmt_19937;;
+module type SfmtS = sig
+	val get_id_string: unit -> string
+	val min_int32_array_length: int
+	val min_int64_array_length: int
+	type t
+	val make_int32: int32 -> t
+	val make_int32_array: int32 array -> t
+	val bits32: t -> int32
+	val bits64: t -> int64
+	val fill_int32_bigarray: t ->
+		(int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t -> int ->
+		int -> unit
+	val fill_int64_bigarray: t ->
+		(int64, Bigarray.int64_elt, Bigarray.c_layout) Bigarray.Array1.t -> int ->
+		int -> unit
+end;;
 
 let block_size = 100000;;
 let block_size64 = 50000;;
@@ -26,7 +41,8 @@ let array1_64 =
 	Bigarray.Array1.create Bigarray.int64 Bigarray.c_layout (block_size / 2);;
 let array2_64 = Bigarray.Array1.create Bigarray.int64 Bigarray.c_layout 5000;;
 
-let check32 () =
+let check32 (sfmtM: (module SfmtS)) =
+	let module Sfmt = (val sfmtM) in
 	let array32 = array1 in
 	let array32_2 = array2 in
 	let ini = [| 0x1234l; 0x5678l; 0x9ABCl; 0xDEF0l |] in
@@ -112,7 +128,8 @@ let check32 () =
 
 let clock () = (Unix.times ()).Unix.tms_utime;;
 
-let speed32 () =
+let speed32 (sfmtM: (module SfmtS)) =
+	let module Sfmt = (val sfmtM) in
 	let min = ref max_float in
 	let array32 = array1 in
 	if Sfmt.min_int32_array_length > block_size then (
@@ -148,7 +165,8 @@ let speed32 () =
 	Printf.printf "32 bit SEQUE:%.0f" (!min *. 1000.);
 	Printf.printf "ms for %u randoms generation\n" (block_size * count);;
 
-let check64 () =
+let check64 (sfmtM: (module SfmtS)) =
+	let module Sfmt = (val sfmtM) in
 	let ini = [| 5l; 4l; 3l; 2l; 1l |] in
 	let array64 = array1_64 in
 	let array64_2 = array2_64 in
@@ -212,7 +230,8 @@ let check64 () =
 		)
 	done;;
 
-let speed64 () =
+let speed64 (sfmtM: (module SfmtS)) =
+	let module Sfmt = (val sfmtM) in
 	let min = ref max_float in
 	let array64 = array1_64 in
 	if Sfmt.min_int64_array_length > block_size64 then (
@@ -248,11 +267,14 @@ let speed64 () =
 	Printf.printf "64 bit SEQUE:%.0f" (!min *. 1000.);
 	Printf.printf "ms for %u randoms generation\n" (block_size64 * count);;
 
+let sfmtM = ref (module Sfmt_19937: SfmtS) in
 let speed = ref false in
 let bit64 = ref false in
 let bit32 = ref false in
 for i = 1 to Array.length Sys.argv - 1 do
 	match Sys.argv.(i) with
+	| "-19937" -> sfmtM := (module Sfmt_19937)
+	| "-216091" -> sfmtM := (module Sfmt_216091)
 	| "-s" -> speed := true
 	| "-b64" -> bit64 := true
 	| "-b32" -> bit32 := true
@@ -265,13 +287,13 @@ if not (!speed || !bit32 || !bit64) then (
 if !speed then (
 	let old_control = Gc.get () in
 	Gc.set {old_control with Gc.max_overhead = 1000000}; (* disable GC *)
-	speed32 ();
-	speed64 ();
+	speed32 !sfmtM;
+	speed64 !sfmtM;
 	Gc.set old_control
 );
 if !bit32 then (
-	check32 ()
+	check32 !sfmtM
 );
 if !bit64 then (
-	check64 ()
+	check64 !sfmtM
 );;
