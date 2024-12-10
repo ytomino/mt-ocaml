@@ -11,6 +11,8 @@ STUBLIBNAME=ml$(LIBNAME)
 DEBUG=
 ASSERT=
 
+SIMD=$(and $(filter amd64-% x86_64-%,$(TARGET)),SSE2)
+
 OCAMLCFLAGS=$(and $(filter-out 0,$(DEBUG)),-g) $(if $(ASSERT),,-noassert) -w +a
 OCAMLOPTFLAGS=$(OCAMLCFLAGS)
 OCAML_INCLUDE_FLAGS=
@@ -39,3 +41,7 @@ $(BUILDDIR)/sfmt_19937_stub.o: private override C_INCLUDE_FLAGS+=-Isfmt
 $(BUILDDIR)/sfmt_19937_stub.o\
 : sfmt/SFMT.c sfmt/SFMT.h sfmt/SFMT-common.h sfmt/SFMT-params.h \
   sfmt/SFMT-params19937.h
+ifeq ($(SIMD),SSE2)
+$(BUILDDIR)/sfmt_19937_stub.o: private override CFLAGS+=-msse2 -DHAVE_SSE2
+$(BUILDDIR)/sfmt_19937_stub.o: sfmt/SFMT-sse2.h
+endif
