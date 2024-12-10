@@ -17,6 +17,8 @@ external make_int32_array: int32 array -> t =
 let make (seed: int array) = make_int32_array (Array.map Int32.of_int seed);;
 let make_self_init () = make (random_seed ());;
 
+external copy: t -> t = "mlmt_sfmt_${SFMT_MEXP}_copy";;
+
 external bits32: t -> int32 = "mlmt_sfmt_${SFMT_MEXP}_bits32";;
 external bits64: t -> int64 = "mlmt_sfmt_${SFMT_MEXP}_bits64";;
 external float_bits32: t -> float = "mlmt_sfmt_${SFMT_MEXP}_float_bits32";;
