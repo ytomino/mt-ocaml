@@ -1,3 +1,5 @@
+external random_seed: unit -> int array = "caml_sys_random_seed";;
+
 external get_id_string: unit -> string =
 	"mlmt_sfmt_${SFMT_MEXP}_get_id_string";;
 
@@ -11,6 +13,9 @@ type t;;
 external make_int32: int32 -> t = "mlmt_sfmt_${SFMT_MEXP}_make_int32";;
 external make_int32_array: int32 array -> t =
 	"mlmt_sfmt_${SFMT_MEXP}_make_int32_array";;
+
+let make (seed: int array) = make_int32_array (Array.map Int32.of_int seed);;
+let make_self_init () = make (random_seed ());;
 
 external bits32: t -> int32 = "mlmt_sfmt_${SFMT_MEXP}_bits32";;
 external bits64: t -> int64 = "mlmt_sfmt_${SFMT_MEXP}_bits64";;
