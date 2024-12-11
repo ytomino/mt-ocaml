@@ -24,3 +24,7 @@ val fill_int32_bigarray: t ->
 val fill_int64_bigarray: t ->
 	(int64, Bigarray.int64_elt, Bigarray.c_layout) Bigarray.Array1.t -> int ->
 	int -> unit
+
+val int: t -> int -> int
+val int32: t -> int32 -> int32
+val int64: t -> int64 -> int64

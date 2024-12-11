@@ -45,3 +45,7 @@ let fill_int64_bigarray state data pos len =
 		&& len <= Bigarray.Array1.dim data - pos
 	then unsafe_fill_int64_bigarray state data pos len
 	else invalid_arg "Sfmt_${SFMT_MEXP}.fill_int64_bigarray";; (* __FUNCTION__ *)
+
+let int: t -> int -> int = Uniform_distribution.int ~bits32 ~bits64;;
+let int32: t -> int32 -> int32 = Uniform_distribution.int32 ~bits32;;
+let int64: t -> int64 -> int64 = Uniform_distribution.int64 ~bits32 ~bits64;;

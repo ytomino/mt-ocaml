@@ -1,6 +1,7 @@
 include Makefile.variables
 
-MLI=mt19937ar.mli $(BUILDDIR)/sfmt_19937.mli $(BUILDDIR)/sfmt_216091.mli
+MLI=uniform_distribution.mli mt19937ar.mli $(BUILDDIR)/sfmt_19937.mli \
+    $(BUILDDIR)/sfmt_216091.mli
 MLSRC=$(MLI:.mli=.ml)
 MLINIT=
 CSRC=mt19937ar_stub.c $(BUILDDIR)/sfmt_19937_stub.c \
@@ -26,6 +27,9 @@ LDLIB=
 
 include Makefile.rules
 
+$(BUILDDIR)/mt19937ar.cmo: $(BUILDDIR)/uniform_distribution.cmi
+$(BUILDDIR)/mt19937ar.cmx: $(BUILDDIR)/uniform_distribution.cmx
+
 $(BUILDDIR)/mt19937ar_stub.o: private override C_INCLUDE_FLAGS+=-Imt19937ar
 $(BUILDDIR)/mt19937ar_stub.o \
 : mt19937ar/mt19937ar.c mt19937ar/mt19937ar.h unexport.h
@@ -38,6 +42,11 @@ $(BUILDDIR)/sfmt_%.ml: ../source/sfmt.ml.in | $(BUILDDIR)
 
 $(BUILDDIR)/sfmt_%_stub.c: ../source/sfmt_stub.c.in | $(BUILDDIR)
 	sed 's/\$${SFMT_MEXP}/$*/g' $< > $@
+
+$(BUILDDIR)/sfmt_19937.cmo $(BUILDDIR)/sfmt_216091.cmo \
+: $(BUILDDIR)/uniform_distribution.cmi
+$(BUILDDIR)/sfmt_19937.cmx $(BUILDDIR)/sfmt_216091.cmx \
+: $(BUILDDIR)/uniform_distribution.cmx
 
 $(BUILDDIR)/sfmt_%_stub.o: private override C_INCLUDE_FLAGS+=-I. -Isfmt
 $(BUILDDIR)/sfmt_%_stub.o \

@@ -96,7 +96,7 @@ $(BUILDDIR)/%.opt.exe: sfmt/%.ml $(BUILDDIR)/mt.cmxa
 
 $(and $(OCAMLC),$(BUILDDIR)/mt.cma) $(and $(OCAMLOPT),$(BUILDDIR)/mt.cmxa) \
 &: ../source/mt19937ar*.* ../source/mt19937ar/* ../source/sfmt*.* \
-   ../source/sfmt/*
+   ../source/sfmt/* ../source/uniform_distribution.*
 	$(MAKE) $(strip \
 		-C ../source install \
 		BUILDDIR=$(abspath $(MT_BUILDDIR)) \
