@@ -38,11 +38,14 @@ let int (type t) ~(bits32: t -> int32) ~(bits64: t -> int64) (state: t)
 		) else
 		if c = 0 then int_of_unsigned_int32 (bits32 state)
 		else Int64.to_int (raw_int64 bits64 state bound64)
-	) else 0;;
+	) else
+	if bound > 0 then 0
+	else invalid_arg "Uniform_distribution.int";; (* __FUNCTION__ *)
 
 let int32 (type t) ~(bits32: t -> int32) (state: t) (bound: int32) =
-	if bound > 1l then raw_int32 bits32 state bound
-	else 0l;;
+	if bound > 1l then raw_int32 bits32 state bound else
+	if bound > 0l then 0l
+	else invalid_arg "Uniform_distribution.int32";; (* __FUNCTION__ *)
 
 let int64 (type t) ~(bits32: t -> int32) ~(bits64: t -> int64) (state: t)
 	(bound: int64) =
@@ -54,4 +57,6 @@ let int64 (type t) ~(bits32: t -> int32) ~(bits64: t -> int64) (state: t)
 		) else
 		if c = 0 then int64_of_unsigned_int32 (bits32 state)
 		else raw_int64 bits64 state bound
-	) else 0L;;
+	) else
+	if bound > 0L then 0L
+	else invalid_arg "Uniform_distribution.int64";; (* __FUNCTION__ *)

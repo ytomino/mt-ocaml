@@ -57,6 +57,8 @@ let nativeint: t -> nativeint -> nativeint =
 		fun state bound -> Int64.to_nativeint (int64 state (Int64.of_nativeint bound))
 	);;
 
-let float (state: t) (bound: float) = bound *. float_bits53 state;;
+let float (state: t) (bound: float) =
+	if bound > 0. then bound *. float_bits53 state
+	else invalid_arg "Sfmt_${SFMT_MEXP}.float";; (* __FUNCTION__ *)
 
 let bool (state: t) = Int32.logand (bits32 state) 0x80000000l <> 0l;;

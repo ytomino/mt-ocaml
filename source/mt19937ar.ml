@@ -42,9 +42,11 @@ let nativeint: t -> nativeint -> nativeint =
 	);;
 
 let float (state: t) (bound: float) =
-	let x = Int64.shift_right_logical (bits64 state) (64 - 53) in
-	let x = ldexp (Int64.to_float x) (-53) in (* [0,1) *)
-	bound *. x;;
+	if bound > 0. then (
+		let x = Int64.shift_right_logical (bits64 state) (64 - 53) in
+		let x = ldexp (Int64.to_float x) (-53) in (* [0,1) *)
+		bound *. x
+	) else invalid_arg "Mt19937ar.float";; (* __FUNCTION__ *)
 
 let bool (state: t) = bits31 state land 0x40000000 <> 0;;
 
