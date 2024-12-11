@@ -12,6 +12,7 @@ module type SfmtS = sig
 	val int64: t -> int64 -> int64
 	val nativeint: t -> nativeint -> nativeint
 	val float: t -> float -> float
+	val bool: t -> bool
 end;;
 
 module Check (Sfmt: SfmtS) = struct
@@ -67,6 +68,12 @@ module Check (Sfmt: SfmtS) = struct
 		let x = Sfmt.float s bound_float in
 		assert (x >= 0. && x < bound_float);
 		drawn := !drawn lor (1 lsl int_of_float x)
+	done;
+	(* bool *)
+	let drawn = ref 0 in
+	while !drawn <> 3 do
+		let x = Sfmt.bool s in
+		drawn := !drawn lor (1 lsl Bool.to_int x)
 	done;;
 	
 	(* drawing out 0 and 1 as lowerest bit *)
@@ -141,6 +148,12 @@ module Check (Sfmt: SfmtS) = struct
 		let _: int32 = Sfmt.bits32 s1 in (* Sfmt.float draw 64bit *)
 		let x1 = Sfmt.float_bits32 s1 in
 		let x2 = ldexp (floor (ldexp (Sfmt.float s2 1.) 32)) (-32) in
+		assert (x1 = x2)
+	done;
+	(* bool *)
+	for _ = 1 to 10 do
+		let x1 = Int32.shift_right_logical (Sfmt.bits32 s1) 31 <> 0l in
+		let x2 = Sfmt.bool s2 in
 		assert (x1 = x2)
 	done;;
 	
