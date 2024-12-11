@@ -49,3 +49,10 @@ let fill_int64_bigarray state data pos len =
 let int: t -> int -> int = Uniform_distribution.int ~bits32 ~bits64;;
 let int32: t -> int32 -> int32 = Uniform_distribution.int32 ~bits32;;
 let int64: t -> int64 -> int64 = Uniform_distribution.int64 ~bits32 ~bits64;;
+
+let nativeint: t -> nativeint -> nativeint =
+	if Sys.word_size <= 32 then (
+		fun state bound -> Nativeint.of_int32 (int32 state (Nativeint.to_int32 bound))
+	) else (
+		fun state bound -> Int64.to_nativeint (int64 state (Int64.of_nativeint bound))
+	);;
