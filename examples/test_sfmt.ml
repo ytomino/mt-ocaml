@@ -5,10 +5,13 @@ module type SfmtS = sig
 	val copy: t -> t
 	val bits32: t -> int32
 	val bits64: t -> int64
+	val float_bits32: t -> float
+	val float_bits53: t -> float
 	val int: t -> int -> int
 	val int32: t -> int32 -> int32
 	val int64: t -> int64 -> int64
 	val nativeint: t -> nativeint -> nativeint
+	val float: t -> float -> float
 end;;
 
 module Check (Sfmt: SfmtS) = struct
@@ -56,6 +59,31 @@ module Check (Sfmt: SfmtS) = struct
 		let x = Sfmt.nativeint s boundn in
 		assert (x >= 0n && x < boundn);
 		drawn := !drawn lor (1 lsl Nativeint.to_int x)
+	done;
+	(* float *)
+	let bound_float = Float.of_int bound in
+	let drawn = ref 0 in
+	while !drawn <> 1 lsl bound - 1 do
+		let x = Sfmt.float s bound_float in
+		assert (x >= 0. && x < bound_float);
+		drawn := !drawn lor (1 lsl int_of_float x)
+	done;;
+	
+	(* drawing out 0 and 1 as lowerest bit *)
+	
+	let s = Sfmt.make_int32 12345l in
+	(* float *)
+	let drawn = ref 0 in
+	while !drawn <> 3 do
+		let x = int_of_float (mod_float (ldexp (Sfmt.float_bits32 s) 34) 8.) in
+		assert (x land 3 = 0);
+		drawn := !drawn lor (1 lsl (x lsr 2))
+	done;
+	let drawn = ref 0 in
+	while !drawn <> 3 do
+		let x = int_of_float (mod_float (ldexp (Sfmt.float_bits53 s) 55) 8.) in
+		assert (x land 3 = 0);
+		drawn := !drawn lor (1 lsl (x lsr 2))
 	done;;
 	
 	(* taking from higher bits *)
@@ -99,6 +127,21 @@ module Check (Sfmt: SfmtS) = struct
 			let x2 = Sfmt.nativeint s2 (Nativeint.shift_left 1n i) in
 			assert (x1 = x2)
 		done
+	done;
+	(* float *)
+	for i = 1 to 53 do
+		for _ = 1 to 10 do
+			let x1 = Int64.to_float (Int64.shift_right_logical (Sfmt.bits64 s1) (64 - i))
+			in
+			let x2 = floor (Sfmt.float s2 (ldexp 1. i)) in
+			assert (x1 = x2)
+		done
+	done;
+	for _ = 1 to 10 do
+		let _: int32 = Sfmt.bits32 s1 in (* Sfmt.float draw 64bit *)
+		let x1 = Sfmt.float_bits32 s1 in
+		let x2 = ldexp (floor (ldexp (Sfmt.float s2 1.) 32)) (-32) in
+		assert (x1 = x2)
 	done;;
 	
 end;;

@@ -56,3 +56,5 @@ let nativeint: t -> nativeint -> nativeint =
 	) else (
 		fun state bound -> Int64.to_nativeint (int64 state (Int64.of_nativeint bound))
 	);;
+
+let float (state: t) (bound: float) = bound *. float_bits53 state;;
