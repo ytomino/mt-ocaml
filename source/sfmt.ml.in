@@ -62,3 +62,15 @@ let float (state: t) (bound: float) =
 	else invalid_arg "Sfmt_${SFMT_MEXP}.float";; (* __FUNCTION__ *)
 
 let bool (state: t) = Int32.logand (bits32 state) 0x80000000l <> 0l;;
+
+external unsafe_import: int32 array * int -> t =
+	"mlmt_sfmt_${SFMT_MEXP}_unsafe_import";;
+
+let import (source: int32 array * int) =
+	let state_array, idx = source in
+	let sfmt_n32 = min_int32_array_length in
+	if Array.length state_array = sfmt_n32 && idx >= 0 && idx <= sfmt_n32
+	then unsafe_import source
+	else invalid_arg "Sfmt_${SFMT_MEXP}.import";; (* __FUNCTION__ *)
+
+external export: t -> int32 array * int = "mlmt_sfmt_${SFMT_MEXP}_export";;

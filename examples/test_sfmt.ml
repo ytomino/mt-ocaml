@@ -13,6 +13,8 @@ module type SfmtS = sig
 	val nativeint: t -> nativeint -> nativeint
 	val float: t -> float -> float
 	val bool: t -> bool
+	val import: int32 array * int -> t
+	val export: t -> int32 array * int
 end;;
 
 module Check (Sfmt: SfmtS) = struct
@@ -21,10 +23,15 @@ module Check (Sfmt: SfmtS) = struct
 	
 	let s1 = Sfmt.make_int32 12345l in
 	let s2 = Sfmt.copy s1 in
+	let s3 = Sfmt.import (Sfmt.export s1) in
 	for _ = 1 to Sfmt.min_int32_array_length + 1 do
 		let r = Sfmt.bits32 s1 in
-		assert (Sfmt.bits32 s2 = r)
-	done;;
+		assert (Sfmt.bits32 s2 = r);
+		assert (Sfmt.bits32 s3 = r)
+	done;
+	let data = Sfmt.export s1 in
+	assert (Sfmt.export s2 = data);
+	assert (Sfmt.export s3 = data);;
 	
 	(* drawing out all of [0,bound) *)
 	
