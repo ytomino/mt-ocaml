@@ -1,0 +1,23 @@
+external get_id_string: unit -> string =
+	"mlmt_dsfmt_${DSFMT_MEXP}_get_id_string";;
+
+let dsfmt_n = (${DSFMT_MEXP} - 128) / 104 + 1;;
+
+let min_float_array_length = dsfmt_n * 2;;
+
+type t;;
+
+external make_int32: int32 -> t = "mlmt_dsfmt_${DSFMT_MEXP}_make_int32";;
+external make_int32_array: int32 array -> t =
+	"mlmt_dsfmt_${DSFMT_MEXP}_make_int32_array";;
+
+external float_bits52: t -> float = "mlmt_dsfmt_${DSFMT_MEXP}_float_bits52";;
+
+external unsafe_fill_floatarray52: t -> floatarray -> int -> int -> unit =
+	"mlmt_dsfmt_${DSFMT_MEXP}_unsafe_fill_floatarray52";;
+
+let fill_floatarray52 state data pos len =
+	if pos >= 0 && len >= min_float_array_length && len mod 2 = 0
+		&& len <= Array.Floatarray.length data - pos
+	then unsafe_fill_floatarray52 state data pos len
+	else invalid_arg "Dsfmt_${DSFMT_MEXP}.fill_floatarray52";; (* __FUNCTION__ *)
