@@ -80,6 +80,15 @@ CAMLprim value ENTRY(dsfmt_, DSFMT_MEXP, _make_int32_array)(value val_seed)
 	CAMLreturn(val_result);
 }
 
+CAMLprim value ENTRY(dsfmt_, DSFMT_MEXP, _copy)(value val_source)
+{
+	CAMLparam1(val_source);
+	CAMLlocal1(val_result);
+	val_result = alloc_dsfmt();
+	memcpy(*pdsfmt_val(val_result), *pdsfmt_val(val_source), sizeof(dsfmt_t));
+	CAMLreturn(val_result);
+}
+
 CAMLprim value ENTRY(dsfmt_, DSFMT_MEXP, _float_bits52)(value val_state)
 {
 	CAMLparam1(val_state);

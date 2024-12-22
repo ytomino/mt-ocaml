@@ -12,6 +12,8 @@ external make_int32_array: int32 array -> t =
 val make: int array -> t
 val make_self_init: unit -> t
 
+external copy: t -> t = "mlmt_dsfmt_${DSFMT_MEXP}_copy"
+
 external float_bits52: t -> float = "mlmt_dsfmt_${DSFMT_MEXP}_float_bits52"
 
 val fill_floatarray52: t -> floatarray -> int -> int -> unit
