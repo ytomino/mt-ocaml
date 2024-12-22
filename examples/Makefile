@@ -31,7 +31,7 @@ MT_BUILDDIR=$(BUILDDIR)/mt$(BUILDSUFFIX)
 BINLN=$(and $(filter $(BUILD),$(TARGET)), \
         $(if $(findstring mingw,$(BUILD))$(findstring msys,$(BUILD)),,bin))
 
-EXAMPLES=$(basename $(wildcard *.ml)) mtTest sfmt_test
+EXAMPLES=$(basename $(wildcard *.ml)) dsfmt_test mtTest sfmt_test
 TESTS=$(filter test_%,$(EXAMPLES))
 
 .PHONY: all check interactive clean $(TESTS)
@@ -56,6 +56,24 @@ $(BUILDDIR)/%.opt.exe: %.ml $(BUILDDIR)/mt.cmxa
 	$(OCAMLOPT) $(strip \
 		$(OCAMLOPTFLAGS_EXE) \
 		-o $@ $(OCAML_INCLUDE_FLAGS) -I $(BUILDDIR) $(filter-out $<,$^) \
+		$(BUILDDIR)/$*.cmx)
+
+$(BUILDDIR)/%.byte.exe: dsfmt/%.ml $(BUILDDIR)/mt.cma
+	$(OCAMLC) $(strip \
+		-c $(OCAMLCFLAGS) \
+		-o $(BUILDDIR)/$*.cmo $(OCAML_INCLUDE_FLAGS) -I $(BUILDDIR) $<)
+	$(OCAMLC) $(strip \
+		$(OCAMLCFLAGS_EXE) \
+		-o $@ $(OCAML_INCLUDE_FLAGS) -I $(BUILDDIR) unix.cma $(filter-out $<,$^) \
+		$(BUILDDIR)/$*.cmo)
+
+$(BUILDDIR)/%.opt.exe: dsfmt/%.ml $(BUILDDIR)/mt.cmxa
+	$(OCAMLOPT) $(strip \
+		-c $(OCAMLOPTFLAGS) \
+		-o $(BUILDDIR)/$*.cmx $(OCAML_INCLUDE_FLAGS) -I $(BUILDDIR) $<)
+	$(OCAMLOPT) $(strip \
+		$(OCAMLOPTFLAGS_EXE) \
+		-o $@ $(OCAML_INCLUDE_FLAGS) -I $(BUILDDIR) unix.cmxa $(filter-out $<,$^) \
 		$(BUILDDIR)/$*.cmx)
 
 $(BUILDDIR)/%.byte.exe: mt19937ar/%.ml $(BUILDDIR)/mt.cma
