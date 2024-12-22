@@ -1,11 +1,13 @@
 include Makefile.variables
 
-MLI=uniform_distribution.mli $(BUILDDIR)/dsfmt_19937.mli mt19937ar.mli \
-    $(BUILDDIR)/sfmt_19937.mli $(BUILDDIR)/sfmt_216091.mli
+MLI=uniform_distribution.mli $(BUILDDIR)/dsfmt_19937.mli \
+    $(BUILDDIR)/dsfmt_216091.mli mt19937ar.mli $(BUILDDIR)/sfmt_19937.mli \
+    $(BUILDDIR)/sfmt_216091.mli
 MLSRC=$(MLI:.mli=.ml)
 MLINIT=
-CSRC=$(BUILDDIR)/dsfmt_19937_stub.c mt19937ar_stub.c \
-     $(BUILDDIR)/sfmt_19937_stub.c $(BUILDDIR)/sfmt_216091_stub.c
+CSRC=$(BUILDDIR)/dsfmt_19937_stub.c $(BUILDDIR)/dsfmt_216091_stub.c \
+     mt19937ar_stub.c $(BUILDDIR)/sfmt_19937_stub.c \
+     $(BUILDDIR)/sfmt_216091_stub.c
 
 LIBNAME=mt
 STUBLIBNAME=ml$(LIBNAME)
@@ -27,22 +29,25 @@ LDLIB=
 
 include Makefile.rules
 
-$(BUILDDIR)/dsfmt_19937.mli: ../source/dsfmt.mli.in | $(BUILDDIR)
-	sed 's/\$${DSFMT_MEXP}/19937/g' $< > $@
+$(BUILDDIR)/dsfmt_%.mli: ../source/dsfmt.mli.in | $(BUILDDIR)
+	sed 's/\$${DSFMT_MEXP}/$*/g' $< > $@
 
-$(BUILDDIR)/dsfmt_19937.ml: ../source/dsfmt.ml.in | $(BUILDDIR)
-	sed 's/\$${DSFMT_MEXP}/19937/g' $< > $@
+$(BUILDDIR)/dsfmt_%.ml: ../source/dsfmt.ml.in | $(BUILDDIR)
+	sed 's/\$${DSFMT_MEXP}/$*/g' $< > $@
 
-$(BUILDDIR)/dsfmt_19937_stub.c: ../source/dsfmt_stub.c.in | $(BUILDDIR)
-	sed 's/\$${DSFMT_MEXP}/19937/g' $< > $@
+$(BUILDDIR)/dsfmt_%_stub.c: ../source/dsfmt_stub.c.in | $(BUILDDIR)
+	sed 's/\$${DSFMT_MEXP}/$*/g' $< > $@
 
-$(BUILDDIR)/dsfmt_19937_stub.o: private override C_INCLUDE_FLAGS+=-I. -Idsfmt
-$(BUILDDIR)/dsfmt_19937_stub.o \
+$(BUILDDIR)/dsfmt_%_stub.o: private override C_INCLUDE_FLAGS+=-I. -Idsfmt
+$(BUILDDIR)/dsfmt_%_stub.o \
 : dsfmt/dSFMT.c dsfmt/dSFMT.h dsfmt/dSFMT-common.h dsfmt/dSFMT-params.h \
-  dsfmt/dSFMT-params19937.h unexport.h
+  unexport.h
 ifeq ($(SIMD),SSE2)
-$(BUILDDIR)/dsfmt_19937_stub.o: private override CFLAGS+=-msse2 -DHAVE_SSE2
+$(BUILDDIR)/dsfmt_%_stub.o: private override CFLAGS+=-msse2 -DHAVE_SSE2
 endif
+
+$(BUILDDIR)/dsfmt_19937_stub.o: dsfmt/dSFMT-params19937.h
+$(BUILDDIR)/dsfmt_216091_stub.o: dsfmt/dSFMT-params216091.h
 
 $(BUILDDIR)/mt19937ar.cmo: $(BUILDDIR)/uniform_distribution.cmi
 $(BUILDDIR)/mt19937ar.cmx: $(BUILDDIR)/uniform_distribution.cmx

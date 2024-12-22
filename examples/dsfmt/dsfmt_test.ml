@@ -34,7 +34,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *)
 (* OCaml version by YT *)
 
-module Dsfmt = Dsfmt_19937;;
+module type DsfmtS = sig
+	val get_id_string: unit -> string
+	val dsfmt_n: int
+	type t
+	val make_int32: int32 -> t
+	val make_int32_array: int32 array -> t
+	val float_bits52: t -> float
+	val fill_floatarray52: t -> floatarray -> int -> int -> unit
+end;;
 
 let to_open_close r = 1. -. r;;
 let to_open_open r =
@@ -48,51 +56,66 @@ let tic_count = 2000;;
 let dummy = Array.Floatarray.create num_rands;;
 
 type genrand_t = unit -> float;;
-type st_genrand_t = Dsfmt.t -> float;;
+type 'a st_genrand_t = 'a -> float;;
 type fill_array_t = unit -> floatarray -> int -> unit;;
-type st_fill_array_t = Dsfmt.t -> floatarray -> int -> unit;;
+type 'a st_fill_array_t = 'a -> floatarray -> int -> unit;;
 
-let dsfmt_global_data = ref (Dsfmt.make_int32 0l);;
+module type S = sig
+	module Dsfmt: DsfmtS;;
+	val dsfmt_global_data: Dsfmt.t ref
+	val sst_genrand_open_close: Dsfmt.t -> float
+	val sst_genrand_open_open: Dsfmt.t -> float
+	val sst_genrand_close1_open2: Dsfmt.t -> float
+	val sst_fill_array_open_close: Dsfmt.t -> floatarray -> int -> unit
+	val sst_fill_array_open_open: Dsfmt.t -> floatarray -> int -> unit
+	val sst_fill_array_close1_open2: Dsfmt.t -> floatarray -> int -> unit
+end;;
 
-(* not inline wrapper functions for check() *)
-let sst_genrand_close_open dsfmt = Dsfmt.float_bits52 dsfmt;;
-let sst_genrand_open_close dsfmt = to_open_close (Dsfmt.float_bits52 dsfmt);;
-let sst_genrand_open_open dsfmt = to_open_open (Dsfmt.float_bits52 dsfmt);;
-let sst_genrand_close1_open2 dsfmt =
-	to_close1_open2 (Dsfmt.float_bits52 dsfmt);;
+module F (Dsfmt: DsfmtS) = struct
+	module Dsfmt = Dsfmt;;
+	let dsfmt_global_data = ref (Dsfmt.make_int32 0l);;
+	
+	(* not inline wrapper functions for check() *)
+	let sst_genrand_close_open dsfmt = Dsfmt.float_bits52 dsfmt;;
+	let sst_genrand_open_close dsfmt = to_open_close (Dsfmt.float_bits52 dsfmt);;
+	let sst_genrand_open_open dsfmt = to_open_open (Dsfmt.float_bits52 dsfmt);;
+	let sst_genrand_close1_open2 dsfmt =
+		to_close1_open2 (Dsfmt.float_bits52 dsfmt);;
+	
+	let s_genrand_close_open () = sst_genrand_close_open !dsfmt_global_data;;
+	let s_genrand_open_close () = sst_genrand_open_close !dsfmt_global_data;;
+	let s_genrand_open_open () = sst_genrand_open_open !dsfmt_global_data;;
+	let s_genrand_close1_open2 () = sst_genrand_close1_open2 !dsfmt_global_data;;
+	
+	let sst_fill_array_close_open dsfmt array size =
+		Dsfmt.fill_floatarray52 dsfmt array 0 size;;
+	let sst_fill_array_open_close dsfmt array size =
+		Dsfmt.fill_floatarray52 dsfmt array 0 size;
+		for i = 0 to pred size do
+			Array.Floatarray.set array i (to_open_close (Array.Floatarray.get array i))
+		done;;
+	let sst_fill_array_open_open dsfmt array size =
+		Dsfmt.fill_floatarray52 dsfmt array 0 size;
+		for i = 0 to pred size do
+			Array.Floatarray.set array i (to_open_open (Array.Floatarray.get array i))
+		done;;
+	let sst_fill_array_close1_open2 dsfmt array size =
+		Dsfmt.fill_floatarray52 dsfmt array 0 size;
+		for i = 0 to pred size do
+			Array.Floatarray.set array i (to_close1_open2 (Array.Floatarray.get array i))
+		done;;
+	
+	let s_fill_array_close_open () = sst_fill_array_close_open !dsfmt_global_data;;
+	let s_fill_array_open_close () = sst_fill_array_open_close !dsfmt_global_data;;
+	let s_fill_array_open_open () = sst_fill_array_open_open !dsfmt_global_data;;
+	let s_fill_array_close1_open2 () =
+		sst_fill_array_close1_open2 !dsfmt_global_data;;
+end;;
 
-let s_genrand_close_open () = sst_genrand_close_open !dsfmt_global_data;;
-let s_genrand_open_close () = sst_genrand_open_close !dsfmt_global_data;;
-let s_genrand_open_open () = sst_genrand_open_open !dsfmt_global_data;;
-let s_genrand_close1_open2 () = sst_genrand_close1_open2 !dsfmt_global_data;;
-
-let sst_fill_array_close_open dsfmt array size =
-	Dsfmt.fill_floatarray52 dsfmt array 0 size;;
-let sst_fill_array_open_close dsfmt array size =
-	Dsfmt.fill_floatarray52 dsfmt array 0 size;
-	for i = 0 to pred size do
-		Array.Floatarray.set array i (to_open_close (Array.Floatarray.get array i))
-	done;;
-let sst_fill_array_open_open dsfmt array size =
-	Dsfmt.fill_floatarray52 dsfmt array 0 size;
-	for i = 0 to pred size do
-		Array.Floatarray.set array i (to_open_open (Array.Floatarray.get array i))
-	done;;
-let sst_fill_array_close1_open2 dsfmt array size =
-	Dsfmt.fill_floatarray52 dsfmt array 0 size;
-	for i = 0 to pred size do
-		Array.Floatarray.set array i (to_close1_open2 (Array.Floatarray.get array i))
-	done;;
-
-let s_fill_array_close_open () = sst_fill_array_close_open !dsfmt_global_data;;
-let s_fill_array_open_close () = sst_fill_array_open_close !dsfmt_global_data;;
-let s_fill_array_open_open () = sst_fill_array_open_open !dsfmt_global_data;;
-let s_fill_array_close1_open2 () =
-	sst_fill_array_close1_open2 !dsfmt_global_data;;
-
-let check (range_str: string) (genrand: genrand_t) (fill_array: fill_array_t)
-	(st_genrand: st_genrand_t) (st_fill_array: st_fill_array_t) (seed: int32)
-	(print_size: int) =
+let check (type t) (m: (module S with type Dsfmt.t = t)) (range_str: string)
+	(genrand: genrand_t) (fill_array: fill_array_t) (st_genrand: t st_genrand_t)
+	(st_fill_array: t st_fill_array_t) (seed: int32) (print_size: int) =
+	let open (val m) in
 	let little = Array.Floatarray.create ((Dsfmt.dsfmt_n + 1) * 2) in
 	let array = dummy in
 	let plittle = little in
@@ -179,9 +202,10 @@ let check (range_str: string) (genrand: genrand_t) (fill_array: fill_array_t)
 		)
 	done;;
 
-let check_ar (range_str: string) (genrand: genrand_t)
-	(fill_array: fill_array_t) (st_genrand: st_genrand_t)
-	(st_fill_array: st_fill_array_t) (print_size: int) =
+let check_ar (type t) (m: (module S with type Dsfmt.t = t)) (range_str: string)
+	(genrand: genrand_t) (fill_array: fill_array_t) (st_genrand: t st_genrand_t)
+	(st_fill_array: t st_fill_array_t) (print_size: int) =
+	let open (val m) in
 	let little = Array.Floatarray.create ((Dsfmt.dsfmt_n + 1) * 2) in
 	let array = dummy in
 	let plittle = little in
@@ -271,7 +295,8 @@ let check_ar (range_str: string) (genrand: genrand_t)
 
 let clock () = (Unix.times ()).Unix.tms_utime;;
 
-let test_co () =
+let test_co (dsfmtM: (module DsfmtS)) =
+	let module Dsfmt = (val dsfmtM) in
 	let array = dummy in
 (*
 #if 0
@@ -302,7 +327,8 @@ let test_co () =
 	Printf.printf "ST BLOCK [0, 1) AVE:%4Lums.\n" (Int64.of_float (!sum *. 100.))
 	[@@ocaml.inline never];;
 
-let test_oc () =
+let test_oc (m: (module S)) =
+	let open (val m) in
 	let array = dummy in
 (*
 #if 0
@@ -333,7 +359,8 @@ let test_oc () =
 	Printf.printf "ST BLOCK (0, 1] AVE:%4Lums.\n" (Int64.of_float (!sum *. 100.))
 	[@@ocaml.inline never];;
 
-let test_oo () =
+let test_oo (m: (module S)) =
+	let open (val m) in
 	let array = dummy in
 (*
 #if 0
@@ -364,7 +391,8 @@ let test_oo () =
 	Printf.printf "ST BLOCK (0, 1) AVE:%4Lums.\n" (Int64.of_float (!sum *. 100.))
 	[@@ocaml.inline never];;
 
-let test_12 () =
+let test_12 (m: (module S)) =
+	let open (val m) in
 	let array = dummy in
 (*
 #if 0
@@ -395,7 +423,8 @@ let test_12 () =
 	Printf.printf "ST BLOCK [1, 2) AVE:%4Lums.\n" (Int64.of_float (!sum *. 100.))
 	[@@ocaml.inline never];;
 
-let test_seq_co () =
+let test_seq_co (dsfmtM: (module DsfmtS)) =
+	let module Dsfmt = (val dsfmtM) in
 	let array = dummy in
 	let total = ref 0. in
 (*
@@ -470,7 +499,8 @@ let test_seq_co () =
 	Printf.printf "total = %f\n" !total
 	[@@ocaml.inline never];;
 
-let test_seq_oc () =
+let test_seq_oc (dsfmtM: (module DsfmtS)) =
+	let module Dsfmt = (val dsfmtM) in
 	let array = dummy in
 	let total = ref 0. in
 (*
@@ -542,7 +572,8 @@ let test_seq_oc () =
 	Printf.printf "total = %f\n" !total
 	[@@ocaml.inline never];;
 
-let test_seq_oo () =
+let test_seq_oo (dsfmtM: (module DsfmtS)) =
+	let module Dsfmt = (val dsfmtM) in
 	let array = dummy in
 	let total = ref 0. in
 (*
@@ -614,7 +645,8 @@ let test_seq_oo () =
 	Printf.printf "total = %f\n" !total
 	[@@ocaml.inline never];;
 
-let test_seq_12 () =
+let test_seq_12 (dsfmtM: (module DsfmtS)) =
+	let module Dsfmt = (val dsfmtM) in
 	let array = dummy in
 	let total = ref 0. in
 (*
@@ -686,42 +718,55 @@ let test_seq_12 () =
 	Printf.printf "total = %f\n" !total
 	[@@ocaml.inline never];;
 
-if Array.length Sys.argv >= 2 && Sys.argv.(1) = "-s" then (
+let dsfmtM = ref (module Dsfmt_19937: DsfmtS) in
+let speed = ref false in
+for i = 1 to Array.length Sys.argv - 1 do
+	match Sys.argv.(i) with
+	| "-19937" -> dsfmtM := (module Dsfmt_19937)
+	| "-216091" -> dsfmtM := (module Dsfmt_216091)
+	| "-s" -> speed := true
+	| _ -> exit 2
+done;
+let module Dsfmt = (val !dsfmtM) in
+let module M = F (Dsfmt) in
+if !speed then (
 	Printf.printf "consumed time for generating %d randoms.\n"
 		(num_rands * tic_count);
+	let m = (module M: S) in
 	let old_control = Gc.get () in
 	Gc.set {old_control with Gc.max_overhead = 1000000}; (* disable GC *)
-	test_co ();
-	test_oc ();
-	test_oo ();
-	test_12 ();
-	test_seq_co ();
-	test_seq_oc ();
-	test_seq_oo ();
-	test_seq_12 ();
+	test_co !dsfmtM;
+	test_oc m;
+	test_oo m;
+	test_12 m;
+	test_seq_co !dsfmtM;
+	test_seq_oc !dsfmtM;
+	test_seq_oo !dsfmtM;
+	test_seq_12 !dsfmtM;
 	Gc.set old_control
 ) else (
 	Printf.printf "%s\n" (Dsfmt.get_id_string ());
+	let m = (module M: S with type Dsfmt.t = Dsfmt.t) in
 	Printf.printf "init_gen_rand(0) ";
-	check "[1, 2)" s_genrand_close1_open2 s_fill_array_close1_open2
-		sst_genrand_close1_open2 sst_fill_array_close1_open2 0l 1000;
+	check m "[1, 2)" M.s_genrand_close1_open2 M.s_fill_array_close1_open2
+		M.sst_genrand_close1_open2 M.sst_fill_array_close1_open2 0l 1000;
 	for i = 0 to pred 20 do
 		Printf.printf "init_gen_rand(%d) " i;
 		match i mod 4 with
 		| 0 ->
-			check "[0, 1)" s_genrand_close_open s_fill_array_close_open
-				sst_genrand_close_open sst_fill_array_close_open (Int32.of_int i) 12
+			check m "[0, 1)" M.s_genrand_close_open M.s_fill_array_close_open
+				M.sst_genrand_close_open M.sst_fill_array_close_open (Int32.of_int i) 12
 		| 1 ->
-			check "(0, 1]" s_genrand_open_close s_fill_array_open_close
-				sst_genrand_open_close sst_fill_array_open_close (Int32.of_int i) 12
+			check m "(0, 1]" M.s_genrand_open_close M.s_fill_array_open_close
+				M.sst_genrand_open_close M.sst_fill_array_open_close (Int32.of_int i) 12
 		| 2 ->
-			check "(0, 1)" s_genrand_open_open s_fill_array_open_open
-				sst_genrand_open_open sst_fill_array_open_open (Int32.of_int i) 12
+			check m "(0, 1)" M.s_genrand_open_open M.s_fill_array_open_open
+				M.sst_genrand_open_open M.sst_fill_array_open_open (Int32.of_int i) 12
 		| _ -> (* 3 *)
-			check "[1, 2)" s_genrand_close1_open2 s_fill_array_close1_open2
-				sst_genrand_close1_open2 sst_fill_array_close1_open2 (Int32.of_int i) 12
+			check m "[1, 2)" M.s_genrand_close1_open2 M.s_fill_array_close1_open2
+				M.sst_genrand_close1_open2 M.sst_fill_array_close1_open2 (Int32.of_int i) 12
 	done;
 	Printf.printf "init_by_array {1, 2, 3, 4} ";
-	check_ar "[1, 2)" s_genrand_close1_open2 s_fill_array_close1_open2
-		sst_genrand_close1_open2 sst_fill_array_close1_open2 1000
+	check_ar m "[1, 2)" M.s_genrand_close1_open2 M.s_fill_array_close1_open2
+		M.sst_genrand_close1_open2 M.sst_fill_array_close1_open2 1000
 );;
