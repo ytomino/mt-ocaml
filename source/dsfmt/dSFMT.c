@@ -22,6 +22,7 @@ extern "C" {
 #endif
 
 /** dsfmt internal state vector */
+STATIC_DEFINITION
 dsfmt_t dsfmt_global_data;
 /** dsfmt mexp for check */
 static const int dsfmt_mexp = DSFMT_MEXP;

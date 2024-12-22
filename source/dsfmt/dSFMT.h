@@ -176,19 +176,31 @@ struct DSFMT_T {
 typedef struct DSFMT_T dsfmt_t;
 
 /** dsfmt internal state vector */
-extern dsfmt_t dsfmt_global_data;
+STATIC
+dsfmt_t dsfmt_global_data;
 /** dsfmt mexp for check */
+#if 0
 extern const int dsfmt_global_mexp;
+#endif
 
+STATIC
 void dsfmt_gen_rand_all(dsfmt_t *dsfmt);
+STATIC
 void dsfmt_fill_array_open_close(dsfmt_t *dsfmt, double array[], ptrdiff_t size);
+STATIC
 void dsfmt_fill_array_close_open(dsfmt_t *dsfmt, double array[], ptrdiff_t size);
+STATIC
 void dsfmt_fill_array_open_open(dsfmt_t *dsfmt, double array[], ptrdiff_t size);
+STATIC
 void dsfmt_fill_array_close1_open2(dsfmt_t *dsfmt, double array[], ptrdiff_t size);
+STATIC
 void dsfmt_chk_init_gen_rand(dsfmt_t *dsfmt, uint32_t seed, int mexp);
+STATIC
 void dsfmt_chk_init_by_array(dsfmt_t *dsfmt, uint32_t init_key[],
                              int key_length, int mexp);
+STATIC
 const char *dsfmt_get_idstring(void);
+UNUSED STATIC
 int dsfmt_get_min_array_size(void);
 
 #if defined(DSFMT_SHLIB)

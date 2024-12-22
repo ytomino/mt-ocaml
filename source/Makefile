@@ -36,10 +36,10 @@ $(BUILDDIR)/dsfmt_19937.ml: ../source/dsfmt.ml.in | $(BUILDDIR)
 $(BUILDDIR)/dsfmt_19937_stub.c: ../source/dsfmt_stub.c.in | $(BUILDDIR)
 	sed 's/\$${DSFMT_MEXP}/19937/g' $< > $@
 
-$(BUILDDIR)/dsfmt_19937_stub.o: private override C_INCLUDE_FLAGS+=-Idsfmt
+$(BUILDDIR)/dsfmt_19937_stub.o: private override C_INCLUDE_FLAGS+=-I. -Idsfmt
 $(BUILDDIR)/dsfmt_19937_stub.o \
 : dsfmt/dSFMT.c dsfmt/dSFMT.h dsfmt/dSFMT-common.h dsfmt/dSFMT-params.h \
-  dsfmt/dSFMT-params19937.h
+  dsfmt/dSFMT-params19937.h unexport.h
 ifeq ($(SIMD),SSE2)
 $(BUILDDIR)/dsfmt_19937_stub.o: private override CFLAGS+=-msse2 -DHAVE_SSE2
 endif

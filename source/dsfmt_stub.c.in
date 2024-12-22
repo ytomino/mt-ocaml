@@ -1,6 +1,7 @@
 #define DSFMT_DO_NOT_USE_OLD_NAMES
 #define DSFMT_MEXP ${DSFMT_MEXP}
 
+#include "unexport.h"
 #include "dSFMT.c"
 
 #include <caml/alloc.h>
