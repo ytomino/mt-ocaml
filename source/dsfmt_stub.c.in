@@ -4,6 +4,17 @@
 #include "unexport.h"
 #include "dSFMT.c"
 
+DSFMT_PRE_INLINE2 uint64_t dsfmt_genrand_uint52(dsfmt_t *dsfmt) {
+	uint64_t r;
+	uint64_t *psfmt64 = &dsfmt->status[0].u[0];
+	if (dsfmt->idx >= DSFMT_N64) {
+		dsfmt_gen_rand_all(dsfmt);
+		dsfmt->idx = 0;
+	}
+	r = psfmt64[dsfmt->idx++] & DSFMT_LOW_MASK;
+	return r;
+}
+
 #include <caml/alloc.h>
 #include <caml/custom.h>
 #include <caml/fail.h>
@@ -86,6 +97,14 @@ CAMLprim value ENTRY(dsfmt_, DSFMT_MEXP, _copy)(value val_source)
 	CAMLlocal1(val_result);
 	val_result = alloc_dsfmt();
 	memcpy(*pdsfmt_val(val_result), *pdsfmt_val(val_source), sizeof(dsfmt_t));
+	CAMLreturn(val_result);
+}
+
+CAMLprim value ENTRY(dsfmt_, DSFMT_MEXP, _bits52)(value val_state)
+{
+	CAMLparam1(val_state);
+	CAMLlocal1(val_result);
+	val_result = caml_copy_int64(dsfmt_genrand_uint52(*pdsfmt_val(val_state)));
 	CAMLreturn(val_result);
 }
 
