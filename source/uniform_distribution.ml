@@ -16,6 +16,21 @@ let raw_int32: type t. (t -> int32) -> t -> int32 -> int32 =
 	let m = Int32.pred (Int32.mul bound d) in
 	Int32.unsigned_div (draw32 bits32 state m) d;;
 
+let raw_int63: type t. int64 -> (t -> int64) -> t -> int64 -> int64 =
+	let rec draw63 max_bound bits state max_dividend =
+		let x = bits state in
+		assert (Int64.unsigned_compare x max_bound < 0);
+		(* x >= 0L && max_dividend > 0L *)
+		if x <= max_dividend then x
+		else draw63 max_bound bits state max_dividend
+	in
+	fun max_bound bits state bound ->
+	(* Int64.sub max_bound bound >= 0L && bound > 1L *)
+	let d = Int64.succ (Int64.div (Int64.sub max_bound bound) bound) in
+	let m = Int64.pred (Int64.mul bound d) in
+	(* m > 0L && d > 0L *)
+	Int64.div (draw63 max_bound bits state m) d;;
+
 let raw_int64: type t. (t -> int64) -> t -> int64 -> int64 =
 	let rec draw64 bits64 state max_dividend =
 		let x = bits64 state in
@@ -60,3 +75,27 @@ let int64 (type t) ~(bits32: t -> int32) ~(bits64: t -> int64) (state: t)
 	) else
 	if bound > 0L then 0L
 	else invalid_arg "Uniform_distribution.int64";; (* __FUNCTION__ *)
+
+let int_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
+	: t -> int -> int =
+	let loc = "Uniform_distribution.int_from_int64_bits" in (* __FUNCTION__ *)
+	if width > 0 && width < 64 then (
+		let max_bound = Int64.shift_left 1L width in
+		fun state bound ->
+		let bound64 = Int64.of_int bound in
+		if Int64.unsigned_compare (Int64.sub bound64 2L) (Int64.sub max_bound 2L) <= 0
+			(* bound > 1 && bound <= 2 ** n *)
+		then Int64.to_int (raw_int63 max_bound bits state bound64)
+		else
+		if bound = 1 then 0
+		else invalid_arg loc
+	) else if width = 64 then (
+		fun state bound ->
+		if bound > 1 then (
+			let bound64 = Int64.of_int bound in
+			Int64.to_int (raw_int64 bits state bound64)
+		) else
+		if bound > 0 then 0
+		else invalid_arg loc
+	) else invalid_arg loc
+	[@@inline always];;

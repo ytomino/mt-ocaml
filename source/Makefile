@@ -38,6 +38,11 @@ $(BUILDDIR)/dsfmt_%.ml: ../source/dsfmt.ml.in | $(BUILDDIR)
 $(BUILDDIR)/dsfmt_%_stub.c: ../source/dsfmt_stub.c.in | $(BUILDDIR)
 	sed 's/\$${DSFMT_MEXP}/$*/g' $< > $@
 
+$(BUILDDIR)/dsfmt_19937.cmo $(BUILDDIR)/dsfmt_216091.cmo \
+: $(BUILDDIR)/uniform_distribution.cmi
+$(BUILDDIR)/dsfmt_19937.cmx $(BUILDDIR)/dsfmt_216091.cmx \
+: $(BUILDDIR)/uniform_distribution.cmx
+
 $(BUILDDIR)/dsfmt_%_stub.o: private override C_INCLUDE_FLAGS+=-I. -Idsfmt
 $(BUILDDIR)/dsfmt_%_stub.o \
 : dsfmt/dSFMT.c dsfmt/dSFMT.h dsfmt/dSFMT-common.h dsfmt/dSFMT-params.h \

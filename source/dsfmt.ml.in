@@ -29,3 +29,7 @@ let fill_floatarray52 state data pos len =
 		&& len <= Array.Floatarray.length data - pos
 	then unsafe_fill_floatarray52 state data pos len
 	else invalid_arg "Dsfmt_${DSFMT_MEXP}.fill_floatarray52";; (* __FUNCTION__ *)
+
+let int: t -> int -> int =
+	(Uniform_distribution.int_from_int64_bits [@ocaml.inlined]) ~width:52
+		~bits:bits52;;

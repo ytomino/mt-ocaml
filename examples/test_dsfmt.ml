@@ -5,6 +5,7 @@ module type DsfmtS = sig
 	val copy: t -> t
 	val bits52: t -> int64
 	val float_bits52: t -> float
+	val int: t -> int -> int
 end;;
 
 module Check (Dsfmt: DsfmtS) = struct
@@ -18,6 +19,18 @@ module Check (Dsfmt: DsfmtS) = struct
 		assert (Dsfmt.float_bits52 s2 = r)
 	done;;
 	
+	(* drawing out all of [0,bound) *)
+	
+	let bound = 6 in
+	let s = Dsfmt.make_int32 1234l in
+	(* int *)
+	let drawn = ref 0 in
+	while !drawn <> 1 lsl bound - 1 do
+		let x = Dsfmt.int s bound in
+		assert (x >= 0 && x < bound);
+		drawn := !drawn lor (1 lsl x)
+	done;;
+	
 	(* taking from higher bits *)
 	
 	let s1 = Dsfmt.make_int32 1234l in
@@ -27,6 +40,14 @@ module Check (Dsfmt: DsfmtS) = struct
 		let x1 = Int64.of_float (ldexp (Dsfmt.float_bits52 s1) 52) in
 		let x2 = Dsfmt.bits52 s2 in
 		assert (x1 = x2)
+	done;
+	(* int *)
+	for i = 1 to min 52 (Sys.word_size - 3) do
+		for _ = 1 to 10 do
+			let x1 = Int64.to_int (Int64.shift_right_logical (Dsfmt.bits52 s1) (52 - i)) in
+			let x2 = Dsfmt.int s2 (1 lsl i) in
+			assert (x1 = x2)
+		done
 	done;;
 	
 end;;
