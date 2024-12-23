@@ -39,3 +39,10 @@ let int32: t -> int32 -> int32 =
 let int64: t -> int64 -> int64 =
 	(Uniform_distribution.int64_from_int64_bits [@ocaml.inlined]) ~width:52
 		~bits:bits52;;
+
+let nativeint: t -> nativeint -> nativeint =
+	if Sys.word_size <= 32 then (
+		fun state bound -> Nativeint.of_int32 (int32 state (Nativeint.to_int32 bound))
+	) else (
+		fun state bound -> Int64.to_nativeint (int64 state (Int64.of_nativeint bound))
+	);;

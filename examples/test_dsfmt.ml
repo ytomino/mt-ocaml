@@ -8,6 +8,7 @@ module type DsfmtS = sig
 	val int: t -> int -> int
 	val int32: t -> int32 -> int32
 	val int64: t -> int64 -> int64
+	val nativeint: t -> nativeint -> nativeint
 end;;
 
 module Check (Dsfmt: DsfmtS) = struct
@@ -47,6 +48,14 @@ module Check (Dsfmt: DsfmtS) = struct
 		let x = Dsfmt.int64 s boundL in
 		assert (x >= 0L && x < boundL);
 		drawn := !drawn lor (1 lsl Int64.to_int x)
+	done;
+	(* nativeint *)
+	let boundn = Nativeint.of_int bound in
+	let drawn = ref 0 in
+	while !drawn <> 1 lsl bound - 1 do
+		let x = Dsfmt.nativeint s boundn in
+		assert (x >= 0n && x < boundn);
+		drawn := !drawn lor (1 lsl Nativeint.to_int x)
 	done;;
 	
 	(* taking from higher bits *)
@@ -81,6 +90,16 @@ module Check (Dsfmt: DsfmtS) = struct
 		for _ = 1 to 10 do
 			let x1 = Int64.shift_right_logical (Dsfmt.bits52 s1) (52 - i) in
 			let x2 = Dsfmt.int64 s2 (Int64.shift_left 1L i) in
+			assert (x1 = x2)
+		done
+	done;
+	(* nativeint *)
+	for i = 1 to min 52 (Sys.word_size - 2) do
+		for _ = 1 to 10 do
+			let x1 =
+				Int64.to_nativeint (Int64.shift_right_logical (Dsfmt.bits52 s1) (52 - i))
+			in
+			let x2 = Dsfmt.nativeint s2 (Nativeint.shift_left 1n i) in
 			assert (x1 = x2)
 		done
 	done;;
