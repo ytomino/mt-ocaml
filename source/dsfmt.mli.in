@@ -20,3 +20,4 @@ external float_bits52: t -> float = "mlmt_dsfmt_${DSFMT_MEXP}_float_bits52"
 val fill_floatarray52: t -> floatarray -> int -> int -> unit
 
 val int: t -> int -> int
+val int32: t -> int32 -> int32

@@ -6,6 +6,7 @@ module type DsfmtS = sig
 	val bits52: t -> int64
 	val float_bits52: t -> float
 	val int: t -> int -> int
+	val int32: t -> int32 -> int32
 end;;
 
 module Check (Dsfmt: DsfmtS) = struct
@@ -29,6 +30,14 @@ module Check (Dsfmt: DsfmtS) = struct
 		let x = Dsfmt.int s bound in
 		assert (x >= 0 && x < bound);
 		drawn := !drawn lor (1 lsl x)
+	done;
+	(* int32 *)
+	let boundl = Int32.of_int bound in
+	let drawn = ref 0 in
+	while !drawn <> 1 lsl bound - 1 do
+		let x = Dsfmt.int32 s boundl in
+		assert (x >= 0l && x < boundl);
+		drawn := !drawn lor (1 lsl Int32.to_int x)
 	done;;
 	
 	(* taking from higher bits *)
@@ -46,6 +55,15 @@ module Check (Dsfmt: DsfmtS) = struct
 		for _ = 1 to 10 do
 			let x1 = Int64.to_int (Int64.shift_right_logical (Dsfmt.bits52 s1) (52 - i)) in
 			let x2 = Dsfmt.int s2 (1 lsl i) in
+			assert (x1 = x2)
+		done
+	done;
+	(* int32 *)
+	for i = 1 to 30 do
+		for _ = 1 to 10 do
+			let x1 = Int64.to_int32 (Int64.shift_right_logical (Dsfmt.bits52 s1) (52 - i))
+			in
+			let x2 = Dsfmt.int32 s2 (Int32.shift_left 1l i) in
 			assert (x1 = x2)
 		done
 	done;;

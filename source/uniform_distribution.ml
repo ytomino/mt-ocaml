@@ -99,3 +99,27 @@ let int_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
 		else invalid_arg loc
 	) else invalid_arg loc
 	[@@inline always];;
+
+let int32_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
+	: t -> int32 -> int32 =
+	let loc = "Uniform_distribution.int32_from_int64_bits" in (* __FUNCTION__ *)
+	if width > 0 && width < 64 then (
+		let max_bound = Int64.shift_left 1L width in
+		fun state bound ->
+		let bound64 = Int64.of_int32 bound in
+		if Int64.unsigned_compare (Int64.sub bound64 2L) (Int64.sub max_bound 2L) <= 0
+			(* bound > 1 && bound <= 2 ** n *)
+		then Int64.to_int32 (raw_int63 max_bound bits state bound64)
+		else
+		if bound = 1l then 0l
+		else invalid_arg loc
+	) else if width = 64 then (
+		fun state bound ->
+		if bound > 1l then (
+			let bound64 = Int64.of_int32 bound in
+			Int64.to_int32 (raw_int64 bits state bound64)
+		) else
+		if bound > 0l then 0l
+		else invalid_arg loc
+	) else invalid_arg loc
+	[@@inline always];;

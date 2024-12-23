@@ -33,3 +33,6 @@ let fill_floatarray52 state data pos len =
 let int: t -> int -> int =
 	(Uniform_distribution.int_from_int64_bits [@ocaml.inlined]) ~width:52
 		~bits:bits52;;
+let int32: t -> int32 -> int32 =
+	(Uniform_distribution.int32_from_int64_bits [@ocaml.inlined]) ~width:52
+		~bits:bits52;;
