@@ -36,3 +36,6 @@ let int: t -> int -> int =
 let int32: t -> int32 -> int32 =
 	(Uniform_distribution.int32_from_int64_bits [@ocaml.inlined]) ~width:52
 		~bits:bits52;;
+let int64: t -> int64 -> int64 =
+	(Uniform_distribution.int64_from_int64_bits [@ocaml.inlined]) ~width:52
+		~bits:bits52;;

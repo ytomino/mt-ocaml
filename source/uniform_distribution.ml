@@ -123,3 +123,23 @@ let int32_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
 		else invalid_arg loc
 	) else invalid_arg loc
 	[@@inline always];;
+
+let int64_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
+	: t -> int64 -> int64 =
+	let loc = "Uniform_distribution.int64_from_int64_bits" in (* __FUNCTION__ *)
+	if width > 0 && width < 64 then (
+		let max_bound = Int64.shift_left 1L width in
+		fun state bound ->
+		if Int64.unsigned_compare (Int64.sub bound 2L) (Int64.sub max_bound 2L) <= 0
+			(* bound > 1 && bound <= 2 ** n *)
+		then raw_int63 max_bound bits state bound
+		else
+		if bound = 1L then 0L
+		else invalid_arg loc
+	) else if width = 64 then (
+		fun state bound ->
+		if bound > 1L then raw_int64 bits state bound else
+		if bound > 0L then 0L
+		else invalid_arg loc
+	) else invalid_arg loc
+	[@@inline always];;

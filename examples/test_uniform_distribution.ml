@@ -29,6 +29,8 @@ let try_int_from_int64_bits =
 	try_invalid_argument "Uniform_distribution.int_from_int64_bits";;
 let try_int32_from_int64_bits =
 	try_invalid_argument "Uniform_distribution.int32_from_int64_bits";;
+let try_int64_from_int64_bits =
+	try_invalid_argument "Uniform_distribution.int64_from_int64_bits";;
 
 (* 2**0 *)
 let bound = 1 in
@@ -52,7 +54,12 @@ assert (f 64 nocall () boundl = 0l);
 let boundL = Int64.of_int bound in
 (* int64 *)
 let f bits32 bits64 = int64 ~bits32 ~bits64 in
-assert (f nocall nocall () boundL = 0L);;
+assert (f nocall nocall () boundL = 0L);
+(* int64_from_int64_bits *)
+let f width bits = int64_from_int64_bits ~width ~bits in
+assert (f 1 nocall () boundL = 0L);
+assert (f 63 nocall () boundL = 0L);
+assert (f 64 nocall () boundL = 0L);;
 
 (* 2**1 *)
 let bound = 2 in
@@ -99,7 +106,19 @@ let f bits32 bits64 = int64 ~bits32 ~bits64 in
 assert (f (const 0l) nocall (ref 0) boundL = 0L);
 assert (f (const 0x7FFFFFFFl) nocall (ref 0) boundL = 0L);
 assert (f (const 0x80000000l) nocall (ref 0) boundL = 1L);
-assert (f (const 0xFFFFFFFFl) nocall (ref 0) boundL = 1L);;
+assert (f (const 0xFFFFFFFFl) nocall (ref 0) boundL = 1L);
+(* int64_from_int64_bits *)
+let f width bits = int64_from_int64_bits ~width ~bits in
+assert (f 1 (const 0L) (ref 0) boundL = 0L);
+assert (f 1 (const 1L) (ref 0) boundL = 1L);
+assert (f 63 (const 0L) (ref 0) boundL = 0L);
+assert (f 63 (const 0x3FFFFFFFFFFFFFFFL) (ref 0) boundL = 0L);
+assert (f 63 (const 0x4000000000000000L) (ref 0) boundL = 1L);
+assert (f 63 (const 0x7FFFFFFFFFFFFFFFL) (ref 0) boundL = 1L);
+assert (f 64 (const 0L) (ref 0) boundL = 0L);
+assert (f 64 (const 0x7FFFFFFFFFFFFFFFL) (ref 0) boundL = 0L);
+assert (f 64 (const 0x8000000000000000L) (ref 0) boundL = 1L);
+assert (f 64 (const 0xFFFFFFFFFFFFFFFFL) (ref 0) boundL = 1L);;
 
 (* 2**1 + 1 *)
 let bound = 3 in
@@ -132,7 +151,11 @@ assert (f 64 (of_array [| 0xFFFFFFFFFFFFFFFFL; 0L |]) (ref 0) bound = 0);
 let boundl = Int32.of_int bound in
 (* int32_from_int64_bits *)
 let f width bits = int32_from_int64_bits ~width ~bits in
-assert (try_int32_from_int64_bits (f 1 nocall ()) boundl);;
+assert (try_int32_from_int64_bits (f 1 nocall ()) boundl);
+let boundL = Int64.of_int bound in
+(* int64_from_int64_bits *)
+let f width bits = int64_from_int64_bits ~width ~bits in
+assert (try_int64_from_int64_bits (f 1 nocall ()) boundL);;
 
 (* 2**30 - 1, max of int on 32bit architecture *)
 let bound = 0x3FFFFFFF in
@@ -192,6 +215,16 @@ assert (f (const 0l) nocall (ref 0) boundL = 0L);
 assert (f (const 0x7FFFFFFFl) nocall (ref 0) boundL = 0x3FFFFFFFL);
 assert (f (const 0x80000000l) nocall (ref 0) boundL = 0x40000000L);
 assert (f (const 0xFFFFFFFFl) nocall (ref 0) boundL = 0x7FFFFFFFL);
+(* int64_from_int64_bits *)
+let f width bits = int64_from_int64_bits ~width ~bits in
+assert (f 31 (const 0L) (ref 0) boundL = 0L);
+assert (f 31 (const 0x3FFFFFFFL) (ref 0) boundL = 0x3FFFFFFFL);
+assert (f 31 (const 0x40000000L) (ref 0) boundL = 0x40000000L);
+assert (f 31 (const 0x7FFFFFFFL) (ref 0) boundL = 0x7FFFFFFFL);
+assert (f 64 (const 0L) (ref 0) boundL = 0L);
+assert (f 64 (const 0x7FFFFFFFFFFFFFFFL) (ref 0) boundL = 0x3FFFFFFFL);
+assert (f 64 (const 0x8000000000000000L) (ref 0) boundL = 0x40000000L);
+assert (f 64 (const 0xFFFFFFFFFFFFFFFFL) (ref 0) boundL = 0x7FFFFFFFL);
 if Sys.word_size > 32 then (
 	let bound = Int64.to_int boundL in
 	(* int *)
@@ -220,6 +253,16 @@ assert (f (const 0l) nocall (ref 0) boundL = 0L);
 assert (f (const 0x7FFFFFFFl) nocall (ref 0) boundL = 0x7FFFFFFFL);
 assert (f (const 0x80000000l) nocall (ref 0) boundL = 0x80000000L);
 assert (f (const 0xFFFFFFFFl) nocall (ref 0) boundL = 0xFFFFFFFFL);
+(* int64_from_int64_bits *)
+let f width bits = int64_from_int64_bits ~width ~bits in
+assert (f 32 (const 0L) (ref 0) boundL = 0L);
+assert (f 32 (const 0x7FFFFFFFL) (ref 0) boundL = 0x7FFFFFFFL);
+assert (f 32 (const 0x80000000L) (ref 0) boundL = 0x80000000L);
+assert (f 32 (const 0xFFFFFFFFL) (ref 0) boundL = 0xFFFFFFFFL);
+assert (f 64 (const 0L) (ref 0) boundL = 0L);
+assert (f 64 (const 0x7FFFFFFFFFFFFFFFL) (ref 0) boundL = 0x7FFFFFFFL);
+assert (f 64 (const 0x8000000000000000L) (ref 0) boundL = 0x80000000L);
+assert (f 64 (const 0xFFFFFFFFFFFFFFFFL) (ref 0) boundL = 0xFFFFFFFFL);
 if Sys.word_size > 32 then (
 	let bound = Int64.to_int boundL in
 	(* int *)
@@ -248,6 +291,16 @@ assert (f nocall (const 0L) (ref 0) boundL = 0L);
 assert (f nocall (const 0x7FFFFFFFFFFFFFFFL) (ref 0) boundL = 0xFFFFFFFFL);
 assert (f nocall (const 0x8000000000000000L) (ref 0) boundL = 0x100000000L);
 assert (f nocall (const 0xFFFFFFFFFFFFFFFFL) (ref 0) boundL = 0x1FFFFFFFFL);
+(* int64_from_int64_bits *)
+let f width bits = int64_from_int64_bits ~width ~bits in
+assert (f 33 (const 0L) (ref 0) boundL = 0L);
+assert (f 33 (const 0xFFFFFFFFL) (ref 0) boundL = 0xFFFFFFFFL);
+assert (f 33 (const 0x100000000L) (ref 0) boundL = 0x100000000L);
+assert (f 33 (const 0x1FFFFFFFFL) (ref 0) boundL = 0x1FFFFFFFFL);
+assert (f 64 (const 0L) (ref 0) boundL = 0L);
+assert (f 64 (const 0x7FFFFFFFFFFFFFFFL) (ref 0) boundL = 0xFFFFFFFFL);
+assert (f 64 (const 0x8000000000000000L) (ref 0) boundL = 0x100000000L);
+assert (f 64 (const 0xFFFFFFFFFFFFFFFFL) (ref 0) boundL = 0x1FFFFFFFFL);
 if Sys.word_size > 32 then (
 	let bound = Int64.to_int boundL in
 	(* int *)
@@ -313,6 +366,14 @@ assert (
 	f nocall (const 0xFFFFFFFFFFFFFFFDL) (ref 0) boundL = 0x7FFFFFFFFFFFFFFEL
 );
 assert (try_get (f nocall (const 0xFFFFFFFFFFFFFFFEL) (ref 0)) boundL);
-assert (try_get (f nocall (const 0xFFFFFFFFFFFFFFFFL) (ref 0)) boundL);;
+assert (try_get (f nocall (const 0xFFFFFFFFFFFFFFFFL) (ref 0)) boundL);
+(* int64_from_int64_bits *)
+let f width bits = int64_from_int64_bits ~width ~bits in
+assert (f 64 (const 0L) (ref 0) boundL = 0L);
+assert (f 64 (const 0x7FFFFFFFFFFFFFFFL) (ref 0) boundL = 0x3FFFFFFFFFFFFFFFL);
+assert (f 64 (const 0x8000000000000000L) (ref 0) boundL = 0x4000000000000000L);
+assert (f 64 (const 0xFFFFFFFFFFFFFFFDL) (ref 0) boundL = 0x7FFFFFFFFFFFFFFEL);
+assert (try_get (f 64 (const 0xFFFFFFFFFFFFFFFEL) (ref 0)) boundL);
+assert (try_get (f 64 (const 0xFFFFFFFFFFFFFFFFL) (ref 0)) boundL);;
 
 prerr_endline "ok";;
