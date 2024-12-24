@@ -19,10 +19,20 @@ let make_self_init () = make (random_seed ());;
 
 external copy: t -> t = "mlmt_sfmt_${SFMT_MEXP}_copy";;
 
-external bits32: t -> int32 = "mlmt_sfmt_${SFMT_MEXP}_bits32";;
-external bits64: t -> int64 = "mlmt_sfmt_${SFMT_MEXP}_bits64";;
-external float_bits32: t -> float = "mlmt_sfmt_${SFMT_MEXP}_float_bits32";;
-external float_bits53: t -> float = "mlmt_sfmt_${SFMT_MEXP}_float_bits53";;
+external bits32: t -> (int32 [@ocaml.unboxed]) =
+	"mlmt_sfmt_${SFMT_MEXP}_bits32" "mlmt_sfmt_${SFMT_MEXP}_bits32_unboxed"
+	[@@ocaml.noalloc];;
+external bits64: t -> (int64 [@ocaml.unboxed]) =
+	"mlmt_sfmt_${SFMT_MEXP}_bits64" "mlmt_sfmt_${SFMT_MEXP}_bits64_unboxed"
+	[@@ocaml.noalloc];;
+external float_bits32: t -> (float [@ocaml.unboxed]) =
+	"mlmt_sfmt_${SFMT_MEXP}_float_bits32"
+	"mlmt_sfmt_${SFMT_MEXP}_float_bits32_unboxed"
+	[@@ocaml.noalloc];;
+external float_bits53: t -> (float [@ocaml.unboxed]) =
+	"mlmt_sfmt_${SFMT_MEXP}_float_bits53"
+	"mlmt_sfmt_${SFMT_MEXP}_float_bits53_unboxed"
+	[@@ocaml.noalloc];;
 
 external unsafe_fill_int32_bigarray: t ->
 	(int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t -> int ->

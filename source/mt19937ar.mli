@@ -7,10 +7,14 @@ val make_self_init: unit -> t
 
 external copy: t -> t = "mlmt_mt19937ar_copy"
 
-external bits31: t -> int = "mlmt_mt19937ar_bits31"
-external bits32: t -> int32 = "mlmt_mt19937ar_bits32"
+external bits31: t -> int = "mlmt_mt19937ar_bits31" [@@ocaml.noalloc]
+external bits32: t -> (int32 [@ocaml.unboxed]) =
+	"mlmt_mt19937ar_bits32" "mlmt_mt19937ar_bits32_unboxed"
+	[@@ocaml.noalloc]
 val bits64: t -> int64
-external float_bits32: t -> float = "mlmt_mt19937ar_float_bits32"
+external float_bits32: t -> (float [@ocaml.unboxed]) =
+	"mlmt_mt19937ar_float_bits32" "mlmt_mt19937ar_float_bits32_unboxed"
+	[@@ocaml.noalloc]
 
 val int: t -> int -> int
 val int32: t -> int32 -> int32

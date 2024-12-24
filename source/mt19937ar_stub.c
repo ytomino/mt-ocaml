@@ -70,19 +70,30 @@ CAMLprim value ENTRY(mt19937ar_bits31)(value val_state)
 	CAMLreturn(val_result);
 }
 
+CAMLprim int32_t ENTRY(mt19937ar_bits32_unboxed)(value val_state)
+{
+	return genrand_int32(mt19937ar_val(val_state));
+}
+
 CAMLprim value ENTRY(mt19937ar_bits32)(value val_state)
 {
 	CAMLparam1(val_state);
 	CAMLlocal1(val_result);
-	val_result = caml_copy_int32(genrand_int32(mt19937ar_val(val_state)));
+	val_result = caml_copy_int32(ENTRY(mt19937ar_bits32_unboxed)(val_state));
 	CAMLreturn(val_result);
+}
+
+CAMLprim double ENTRY(mt19937ar_float_bits32_unboxed)(value val_state)
+{
+	return genrand_real2(mt19937ar_val(val_state));
 }
 
 CAMLprim value ENTRY(mt19937ar_float_bits32)(value val_state)
 {
 	CAMLparam1(val_state);
 	CAMLlocal1(val_result);
-	val_result = caml_copy_double(genrand_real2(mt19937ar_val(val_state)));
+	val_result =
+		caml_copy_double(ENTRY(mt19937ar_float_bits32_unboxed)(val_state));
 	CAMLreturn(val_result);
 }
 

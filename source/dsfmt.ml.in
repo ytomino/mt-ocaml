@@ -18,10 +18,17 @@ let make_self_init () = make (random_seed ());;
 
 external copy: t -> t = "mlmt_dsfmt_${DSFMT_MEXP}_copy";;
 
-external bits52: t -> int64 = "mlmt_dsfmt_${DSFMT_MEXP}_bits52";;
-external float_bits52: t -> float = "mlmt_dsfmt_${DSFMT_MEXP}_float_bits52";;
-external float_bits52p1: t -> float =
-	"mlmt_dsfmt_${DSFMT_MEXP}_float_bits52p1";;
+external bits52: t -> (int64 [@ocaml.unboxed]) =
+	"mlmt_dsfmt_${DSFMT_MEXP}_bits52" "mlmt_dsfmt_${DSFMT_MEXP}_bits52_unboxed"
+	[@@ocaml.noalloc];;
+external float_bits52: t -> (float [@ocaml.unboxed]) =
+	"mlmt_dsfmt_${DSFMT_MEXP}_float_bits52"
+	"mlmt_dsfmt_${DSFMT_MEXP}_float_bits52_unboxed"
+	[@@ocaml.noalloc];;
+external float_bits52p1: t -> (float [@ocaml.unboxed]) =
+	"mlmt_dsfmt_${DSFMT_MEXP}_float_bits52p1"
+	"mlmt_dsfmt_${DSFMT_MEXP}_float_bits52p1_unboxed"
+	[@@ocaml.noalloc];;
 
 external unsafe_fill_floatarray52: t -> floatarray -> int -> int -> unit =
 	"mlmt_dsfmt_${DSFMT_MEXP}_unsafe_fill_floatarray52";;

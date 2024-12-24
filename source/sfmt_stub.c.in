@@ -88,35 +88,59 @@ CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _copy)(value val_source)
 	CAMLreturn(val_result);
 }
 
+CAMLprim int32_t ENTRY(sfmt_, SFMT_MEXP, _bits32_unboxed)(value val_state)
+{
+	return sfmt_genrand_uint32(*psfmt_val(val_state));
+}
+
 CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _bits32)(value val_state)
 {
 	CAMLparam1(val_state);
 	CAMLlocal1(val_result);
-	val_result = caml_copy_int32(sfmt_genrand_uint32(*psfmt_val(val_state)));
+	val_result =
+		caml_copy_int32(ENTRY(sfmt_, SFMT_MEXP, _bits32_unboxed)(val_state));
 	CAMLreturn(val_result);
+}
+
+CAMLprim int64_t ENTRY(sfmt_, SFMT_MEXP, _bits64_unboxed)(value val_state)
+{
+	return sfmt_genrand_uint64(*psfmt_val(val_state));
 }
 
 CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _bits64)(value val_state)
 {
 	CAMLparam1(val_state);
 	CAMLlocal1(val_result);
-	val_result = caml_copy_int64(sfmt_genrand_uint64(*psfmt_val(val_state)));
+	val_result =
+		caml_copy_int64(ENTRY(sfmt_, SFMT_MEXP, _bits64_unboxed)(val_state));
 	CAMLreturn(val_result);
+}
+
+CAMLprim double ENTRY(sfmt_, SFMT_MEXP, _float_bits32_unboxed)(value val_state)
+{
+	return sfmt_genrand_real2(*psfmt_val(val_state));
 }
 
 CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _float_bits32)(value val_state)
 {
 	CAMLparam1(val_state);
 	CAMLlocal1(val_result);
-	val_result = caml_copy_double(sfmt_genrand_real2(*psfmt_val(val_state)));
+	val_result =
+		caml_copy_double(ENTRY(sfmt_, SFMT_MEXP, _float_bits32_unboxed)(val_state));
 	CAMLreturn(val_result);
+}
+
+CAMLprim double ENTRY(sfmt_, SFMT_MEXP, _float_bits53_unboxed)(value val_state)
+{
+	return sfmt_genrand_res53(*psfmt_val(val_state));
 }
 
 CAMLprim value ENTRY(sfmt_, SFMT_MEXP, _float_bits53)(value val_state)
 {
 	CAMLparam1(val_state);
 	CAMLlocal1(val_result);
-	val_result = caml_copy_double(sfmt_genrand_res53(*psfmt_val(val_state)));
+	val_result =
+		caml_copy_double(ENTRY(sfmt_, SFMT_MEXP, _float_bits53_unboxed)(val_state));
 	CAMLreturn(val_result);
 }
 
