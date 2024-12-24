@@ -5,6 +5,7 @@ module type DsfmtS = sig
 	val copy: t -> t
 	val bits52: t -> int64
 	val float_bits52: t -> float
+	val float_bits52p1: t -> float
 	val int: t -> int -> int
 	val int32: t -> int32 -> int32
 	val int64: t -> int64 -> int64
@@ -23,9 +24,9 @@ module Check (Dsfmt: DsfmtS) = struct
 	let s2 = Dsfmt.copy s1 in
 	let s3 = Dsfmt.import (Dsfmt.export s1) in
 	for _ = 1 to Dsfmt.min_float_array_length + 1 do
-		let r = Dsfmt.float_bits52 s1 in
-		assert (Dsfmt.float_bits52 s2 = r);
-		assert (Dsfmt.float_bits52 s3 = r)
+		let r = Dsfmt.float_bits52p1 s1 in
+		assert (Dsfmt.float_bits52p1 s2 = r);
+		assert (Dsfmt.float_bits52p1 s3 = r)
 	done;
 	let data = Dsfmt.export s1 in
 	assert (Dsfmt.export s2 = data);
@@ -88,6 +89,14 @@ module Check (Dsfmt: DsfmtS) = struct
 	let drawn = ref 0 in
 	while !drawn <> 3 do
 		let x = int_of_float (mod_float (ldexp (Dsfmt.float_bits52 s) 54) 8.) in
+		assert (x land 3 = 0);
+		drawn := !drawn lor (1 lsl (x lsr 2))
+	done;
+	let drawn = ref 0 in
+	while !drawn <> 3 do
+		let x =
+			int_of_float (mod_float (ldexp (Dsfmt.float_bits52p1 s) 54) 8.)
+		in
 		assert (x land 3 = 0);
 		drawn := !drawn lor (1 lsl (x lsr 2))
 	done;;

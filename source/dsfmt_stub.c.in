@@ -117,6 +117,15 @@ CAMLprim value ENTRY(dsfmt_, DSFMT_MEXP, _float_bits52)(value val_state)
 	CAMLreturn(val_result);
 }
 
+CAMLprim value ENTRY(dsfmt_, DSFMT_MEXP, _float_bits52p1)(value val_state)
+{
+	CAMLparam1(val_state);
+	CAMLlocal1(val_result);
+	val_result =
+		caml_copy_double(dsfmt_genrand_close1_open2(*pdsfmt_val(val_state)));
+	CAMLreturn(val_result);
+}
+
 CAMLprim value ENTRY(dsfmt_, DSFMT_MEXP, _unsafe_fill_floatarray52)(
 	value val_state, value val_data, value val_pos, value val_len)
 {
@@ -131,6 +140,27 @@ CAMLprim value ENTRY(dsfmt_, DSFMT_MEXP, _unsafe_fill_floatarray52)(
 	}else{
 		_Alignas(16) double array[len];
 		dsfmt_fill_array_close_open(state, array, len);
+		for(size_t i = 0; i < (size_t)len; ++i){
+			Store_double_flat_field(val_data, pos + i, array[i]);
+		}
+	}
+	CAMLreturn(Val_unit);
+}
+
+CAMLprim value ENTRY(dsfmt_, DSFMT_MEXP, _unsafe_fill_floatarray52p1)(
+	value val_state, value val_data, value val_pos, value val_len)
+{
+	CAMLparam4(val_state, val_data, val_pos, val_len);
+	dsfmt_t *state = *pdsfmt_val(val_state);
+	if(state->idx != DSFMT_N64) caml_failwith(__FUNCTION__);
+	long len = Long_val(val_len);
+	long pos = Long_val(val_pos);
+	double *p = &Double_flat_field(val_data, pos);
+	if(((uintptr_t)p & 15) == 0){
+		dsfmt_fill_array_close1_open2(state, p, len);
+	}else{
+		_Alignas(16) double array[len];
+		dsfmt_fill_array_close1_open2(state, array, len);
 		for(size_t i = 0; i < (size_t)len; ++i){
 			Store_double_flat_field(val_data, pos + i, array[i]);
 		}

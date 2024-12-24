@@ -20,6 +20,8 @@ external copy: t -> t = "mlmt_dsfmt_${DSFMT_MEXP}_copy";;
 
 external bits52: t -> int64 = "mlmt_dsfmt_${DSFMT_MEXP}_bits52";;
 external float_bits52: t -> float = "mlmt_dsfmt_${DSFMT_MEXP}_float_bits52";;
+external float_bits52p1: t -> float =
+	"mlmt_dsfmt_${DSFMT_MEXP}_float_bits52p1";;
 
 external unsafe_fill_floatarray52: t -> floatarray -> int -> int -> unit =
 	"mlmt_dsfmt_${DSFMT_MEXP}_unsafe_fill_floatarray52";;
@@ -29,6 +31,15 @@ let fill_floatarray52 state data pos len =
 		&& len <= Array.Floatarray.length data - pos
 	then unsafe_fill_floatarray52 state data pos len
 	else invalid_arg "Dsfmt_${DSFMT_MEXP}.fill_floatarray52";; (* __FUNCTION__ *)
+
+external unsafe_fill_floatarray52p1: t -> floatarray -> int -> int -> unit =
+	"mlmt_dsfmt_${DSFMT_MEXP}_unsafe_fill_floatarray52p1";;
+
+let fill_floatarray52p1 state data pos len =
+	if pos >= 0 && len >= min_float_array_length && len mod 2 = 0
+		&& len <= Array.Floatarray.length data - pos
+	then unsafe_fill_floatarray52p1 state data pos len
+	else invalid_arg "Dsfmt_${DSFMT_MEXP}.fill_floatarray52p1";; (* __FUNCTION__ *)
 
 let int: t -> int -> int =
 	(Uniform_distribution.int_from_int64_bits [@ocaml.inlined]) ~width:52

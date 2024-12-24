@@ -41,13 +41,14 @@ module type DsfmtS = sig
 	val make_int32: int32 -> t
 	val make_int32_array: int32 array -> t
 	val float_bits52: t -> float
+	val float_bits52p1: t -> float
 	val fill_floatarray52: t -> floatarray -> int -> int -> unit
+	val fill_floatarray52p1: t -> floatarray -> int -> int -> unit
 end;;
 
-let to_open_close r = 1. -. r;;
+let to_open_close r = 2. -. r;;
 let to_open_open r =
-	Int64.float_of_bits (Int64.logor (Int64.bits_of_float (r +. 1.)) 1L) -. 1.;;
-let to_close1_open2 r = r +. 1.;;
+	Int64.float_of_bits (Int64.logor (Int64.bits_of_float r) 1L) -. 1.;;
 
 let num_rands = 50000;;
 let tic_mag = 1;;
@@ -77,10 +78,9 @@ module F (Dsfmt: DsfmtS) = struct
 	
 	(* not inline wrapper functions for check() *)
 	let sst_genrand_close_open dsfmt = Dsfmt.float_bits52 dsfmt;;
-	let sst_genrand_open_close dsfmt = to_open_close (Dsfmt.float_bits52 dsfmt);;
-	let sst_genrand_open_open dsfmt = to_open_open (Dsfmt.float_bits52 dsfmt);;
-	let sst_genrand_close1_open2 dsfmt =
-		to_close1_open2 (Dsfmt.float_bits52 dsfmt);;
+	let sst_genrand_open_close dsfmt = to_open_close (Dsfmt.float_bits52p1 dsfmt);;
+	let sst_genrand_open_open dsfmt = to_open_open (Dsfmt.float_bits52p1 dsfmt);;
+	let sst_genrand_close1_open2 dsfmt = Dsfmt.float_bits52p1 dsfmt;;
 	
 	let s_genrand_close_open () = sst_genrand_close_open !dsfmt_global_data;;
 	let s_genrand_open_close () = sst_genrand_open_close !dsfmt_global_data;;
@@ -90,20 +90,17 @@ module F (Dsfmt: DsfmtS) = struct
 	let sst_fill_array_close_open dsfmt array size =
 		Dsfmt.fill_floatarray52 dsfmt array 0 size;;
 	let sst_fill_array_open_close dsfmt array size =
-		Dsfmt.fill_floatarray52 dsfmt array 0 size;
+		Dsfmt.fill_floatarray52p1 dsfmt array 0 size;
 		for i = 0 to pred size do
 			Array.Floatarray.set array i (to_open_close (Array.Floatarray.get array i))
 		done;;
 	let sst_fill_array_open_open dsfmt array size =
-		Dsfmt.fill_floatarray52 dsfmt array 0 size;
+		Dsfmt.fill_floatarray52p1 dsfmt array 0 size;
 		for i = 0 to pred size do
 			Array.Floatarray.set array i (to_open_open (Array.Floatarray.get array i))
 		done;;
 	let sst_fill_array_close1_open2 dsfmt array size =
-		Dsfmt.fill_floatarray52 dsfmt array 0 size;
-		for i = 0 to pred size do
-			Array.Floatarray.set array i (to_close1_open2 (Array.Floatarray.get array i))
-		done;;
+		Dsfmt.fill_floatarray52p1 dsfmt array 0 size;;
 	
 	let s_fill_array_close_open () = sst_fill_array_close_open !dsfmt_global_data;;
 	let s_fill_array_open_close () = sst_fill_array_open_close !dsfmt_global_data;;
@@ -391,8 +388,8 @@ let test_oo (m: (module S)) =
 	Printf.printf "ST BLOCK (0, 1) AVE:%4Lums.\n" (Int64.of_float (!sum *. 100.))
 	[@@ocaml.inline never];;
 
-let test_12 (m: (module S)) =
-	let open (val m) in
+let test_12 (dsfmtM: (module DsfmtS)) =
+	let module Dsfmt = (val dsfmtM) in
 	let array = dummy in
 (*
 #if 0
@@ -415,7 +412,7 @@ let test_12 (m: (module S)) =
 	for i = 0 to pred 10 do
 		let clo = clock () in
 		for j = 0 to pred tic_count do
-			sst_fill_array_close1_open2 dsfmt array num_rands
+			Dsfmt.fill_floatarray52p1 dsfmt array 0 num_rands
 		done;
 		let clo = clock () -. clo in
 		sum := !sum +. clo
@@ -546,7 +543,7 @@ let test_seq_oc (dsfmtM: (module DsfmtS)) =
 		let clo = clock () in
 		for j = 0 to pred tic_count do
 			for k = 0 to pred num_rands do
-				r := !r +. to_open_close (Dsfmt.float_bits52 dsfmt)
+				r := !r +. to_open_close (Dsfmt.float_bits52p1 dsfmt)
 			done
 		done;
 		let clo = clock () -. clo in
@@ -559,7 +556,7 @@ let test_seq_oc (dsfmtM: (module DsfmtS)) =
 		let clo = clock () in
 		for j = 0 to pred tic_count do
 			for k = 0 to pred num_rands do
-				Array.Floatarray.set array k (to_open_close (Dsfmt.float_bits52 dsfmt))
+				Array.Floatarray.set array k (to_open_close (Dsfmt.float_bits52p1 dsfmt))
 			done
 		done;
 		let clo = clock() -. clo in
@@ -619,7 +616,7 @@ let test_seq_oo (dsfmtM: (module DsfmtS)) =
 		let clo = clock () in
 		for j = 0 to pred tic_count do
 			for k = 0 to pred num_rands do
-				r := !r +. to_open_open (Dsfmt.float_bits52 dsfmt)
+				r := !r +. to_open_open (Dsfmt.float_bits52p1 dsfmt)
 			done
 		done;
 		let clo = clock () -. clo in
@@ -632,7 +629,7 @@ let test_seq_oo (dsfmtM: (module DsfmtS)) =
 		let clo = clock () in
 		for j = 0 to pred tic_count do
 			for k = 0 to pred num_rands do
-				Array.Floatarray.set array k (to_open_open (Dsfmt.float_bits52 dsfmt))
+				Array.Floatarray.set array k (to_open_open (Dsfmt.float_bits52p1 dsfmt))
 			done
 		done;
 		let clo = clock() -. clo in
@@ -692,7 +689,7 @@ let test_seq_12 (dsfmtM: (module DsfmtS)) =
 		let clo = clock () in
 		for j = 0 to pred tic_count do
 			for k = 0 to pred num_rands do
-				r := !r +. to_close1_open2 (Dsfmt.float_bits52 dsfmt)
+				r := !r +. Dsfmt.float_bits52p1 dsfmt
 			done
 		done;
 		let clo = clock () -. clo in
@@ -705,7 +702,7 @@ let test_seq_12 (dsfmtM: (module DsfmtS)) =
 		let clo = clock () in
 		for j = 0 to pred tic_count do
 			for k = 0 to pred num_rands do
-				Array.Floatarray.set array k (to_close1_open2 (Dsfmt.float_bits52 dsfmt))
+				Array.Floatarray.set array k (Dsfmt.float_bits52p1 dsfmt)
 			done
 		done;
 		let clo = clock() -. clo in
@@ -738,7 +735,7 @@ if !speed then (
 	test_co !dsfmtM;
 	test_oc m;
 	test_oo m;
-	test_12 m;
+	test_12 !dsfmtM;
 	test_seq_co !dsfmtM;
 	test_seq_oc !dsfmtM;
 	test_seq_oo !dsfmtM;
