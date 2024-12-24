@@ -10,6 +10,7 @@ module type DsfmtS = sig
 	val int64: t -> int64 -> int64
 	val nativeint: t -> nativeint -> nativeint
 	val float: t -> float -> float
+	val bool: t -> bool
 end;;
 
 module Check (Dsfmt: DsfmtS) = struct
@@ -65,6 +66,12 @@ module Check (Dsfmt: DsfmtS) = struct
 		let x = Dsfmt.float s bound_float in
 		assert (x >= 0. && x < bound_float);
 		drawn := !drawn lor (1 lsl int_of_float x)
+	done;
+	(* bool *)
+	let drawn = ref 0 in
+	while !drawn <> 3 do
+		let x = Dsfmt.bool s in
+		drawn := !drawn lor (1 lsl Bool.to_int x)
 	done;;
 	
 	(* drawing out 0 and 1 as lowerest bit *)
@@ -131,6 +138,12 @@ module Check (Dsfmt: DsfmtS) = struct
 			let x2 = floor (Dsfmt.float s2 (ldexp 1. i)) in
 			assert (x1 = x2)
 		done
+	done;
+	(* bool *)
+	for _ = 1 to 10 do
+		let x1 = Int64.shift_right_logical (Dsfmt.bits52 s1) 51 <> 0L in
+		let x2 = Dsfmt.bool s2 in
+		assert (x1 = x2)
 	done;;
 	
 end;;

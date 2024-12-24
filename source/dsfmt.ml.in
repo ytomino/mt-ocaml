@@ -50,3 +50,5 @@ let nativeint: t -> nativeint -> nativeint =
 let float (state: t) (bound: float) =
 	if bound > 0. then bound *. float_bits52 state
 	else invalid_arg "Dsfmt_${DSFMT_MEXP}.float";; (* __FUNCTION__ *)
+
+let bool (state: t) = Int64.logand (bits52 state) 0x0008000000000000L <> 0L;;
