@@ -137,3 +137,53 @@ CAMLprim value ENTRY(dsfmt_, DSFMT_MEXP, _unsafe_fill_floatarray52)(
 	}
 	CAMLreturn(Val_unit);
 }
+
+CAMLprim value ENTRY(dsfmt_, DSFMT_MEXP, _unsafe_import)(value val_source)
+{
+	CAMLparam1(val_source); /* int32 array * int */
+	CAMLlocal2(val_result, val_status_array);
+	val_status_array = Field(val_source, 0);
+	intnat idx = Int_val(Field(val_source, 1));
+	assert(
+		caml_array_length(val_status_array) == DSFMT_N32 + 4
+			&& idx >= 0 && idx <= DSFMT_N64);
+	val_result = alloc_dsfmt();
+	dsfmt_t *result = *pdsfmt_val(val_result);
+	uint32_t *p32 = &result->status[0].u32[0];
+	for(size_t i = 0; i < DSFMT_N32 + 4; ++i){
+		p32[idxof(i)] = Int32_val(Field(val_status_array, i));
+	}
+	result->idx = idx;
+	/* checking */
+	uint64_t *p64 = &result->status[0].u[0];
+	for(size_t i = 0; i < DSFMT_N64; ++i){
+		if((p64[i] & ~DSFMT_LOW_MASK) != DSFMT_HIGH_CONST){
+			caml_failwith(__FUNCTION__);
+		}
+	}
+	CAMLreturn(val_result);
+}
+
+static value dsfmt_export_each(char const *e)
+{
+	return caml_copy_int32((uint32_t)(uintptr_t)e);
+}
+
+CAMLprim value ENTRY(dsfmt_, DSFMT_MEXP, _export)(value val_source)
+{
+	CAMLparam1(val_source);
+	CAMLlocal2(val_result, val_state_array);
+	char const *status_array[DSFMT_N32 + 5];
+	dsfmt_t const *source = *pdsfmt_val(val_source);
+	uint32_t const *p32 = &source->status[0].u32[0];
+	for(size_t i = 0; i < DSFMT_N32 + 4; ++i){
+		status_array[i] = (char const *)(uintptr_t)p32[idxof(i)];
+	}
+	status_array[DSFMT_N32 + 4] = NULL;
+	int idx = source->idx;
+	val_state_array = caml_alloc_array(dsfmt_export_each, status_array);
+	val_result = caml_alloc_tuple(2);
+	Store_field(val_result, 0, val_state_array);
+	Store_field(val_result, 1, Val_int(idx));
+	CAMLreturn(val_result);
+}

@@ -11,6 +11,8 @@ module type DsfmtS = sig
 	val nativeint: t -> nativeint -> nativeint
 	val float: t -> float -> float
 	val bool: t -> bool
+	val import: int32 array * int -> t
+	val export: t -> int32 array * int
 end;;
 
 module Check (Dsfmt: DsfmtS) = struct
@@ -19,10 +21,15 @@ module Check (Dsfmt: DsfmtS) = struct
 	
 	let s1 = Dsfmt.make_int32 1234l in
 	let s2 = Dsfmt.copy s1 in
+	let s3 = Dsfmt.import (Dsfmt.export s1) in
 	for _ = 1 to Dsfmt.min_float_array_length + 1 do
 		let r = Dsfmt.float_bits52 s1 in
-		assert (Dsfmt.float_bits52 s2 = r)
-	done;;
+		assert (Dsfmt.float_bits52 s2 = r);
+		assert (Dsfmt.float_bits52 s3 = r)
+	done;
+	let data = Dsfmt.export s1 in
+	assert (Dsfmt.export s2 = data);
+	assert (Dsfmt.export s3 = data);;
 	
 	(* drawing out all of [0,bound) *)
 	

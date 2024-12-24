@@ -25,3 +25,6 @@ val int64: t -> int64 -> int64
 val nativeint: t -> nativeint -> nativeint
 val float: t -> float -> float (* [0,bound), unlike Stdlib.Random.float *)
 val bool: t -> bool
+
+val import: int32 array * int -> t
+external export: t -> int32 array * int = "mlmt_dsfmt_${DSFMT_MEXP}_export"
