@@ -46,3 +46,7 @@ let nativeint: t -> nativeint -> nativeint =
 	) else (
 		fun state bound -> Int64.to_nativeint (int64 state (Int64.of_nativeint bound))
 	);;
+
+let float (state: t) (bound: float) =
+	if bound > 0. then bound *. float_bits52 state
+	else invalid_arg "Dsfmt_${DSFMT_MEXP}.float";; (* __FUNCTION__ *)
