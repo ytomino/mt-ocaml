@@ -40,6 +40,10 @@ all \
 : $(and $(OCAMLC),$(patsubst %,$(BUILDDIR)/%.byte.exe,$(EXAMPLES))) \
   $(and $(OCAMLOPT),$(patsubst %,$(BUILDDIR)/%.opt.exe,$(EXAMPLES))) $(BINLN)
 
+$(BUILDDIR)/dsfmt_test.opt.exe $(BUILDDIR)/mtTest.opt.exe \
+$(BUILDDIR)/sfmt_test.opt.exe \
+: private override OCAMLOPTFLAGS+=-unsafe
+
 $(BUILDDIR)/%.byte.exe: %.ml $(BUILDDIR)/mt.cma
 	$(OCAMLC) $(strip \
 		-c $(OCAMLCFLAGS) \
