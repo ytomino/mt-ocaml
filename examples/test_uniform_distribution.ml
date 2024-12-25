@@ -376,4 +376,33 @@ assert (f 64 (const 0xFFFFFFFFFFFFFFFDL) (ref 0) boundL = 0x7FFFFFFFFFFFFFFEL);
 assert (try_get (f 64 (const 0xFFFFFFFFFFFFFFFEL) (ref 0)) boundL);
 assert (try_get (f 64 (const 0xFFFFFFFFFFFFFFFFL) (ref 0)) boundL);;
 
+(* float_from_bits64 *)
+let f width bits = float_from_int64_bits ~width ~bits in
+for i = 1 to 52 do
+	assert (f i (const 0L) (ref 0) 1. = 0.);
+	assert (
+		f i (const (Int64.pred (Int64.shift_left 1L i))) (ref 0) 1.
+		= 1. -. ldexp 1. ~-i
+	)
+done;
+for i = 53 to 63 do
+	assert (f i (const 0L) (ref 0) 1. = 0.);
+	assert (
+		f i (const (Int64.pred (Int64.shift_left 1L i))) (ref 0) 1. = Float.pred 1.
+	)
+done;
+assert (f 64 (const 0L) (ref 0) 1. = 0.);
+assert (f 64 (const 0x7FFL) (ref 0) 1. = 0.);
+assert (f 64 (const 0x800L) (ref 0) 1. = 0x1p-53);
+assert (
+	f 64 (const 0x7FFFFFFFFFFFFFFFL) (ref 0) 1. = Float.pred (Float.pred 0.5)
+	(* 54th bit is not generated *)
+);
+assert (f 64 (const 0x8000000000000000L) (ref 0) 1. = 0.5);
+assert (
+	f 64 (const 0xFFFFFFFFFFFFF7FFL) (ref 0) 1. = Float.pred (Float.pred 1.)
+);
+assert (f 64 (const 0xFFFFFFFFFFFFF800L) (ref 0) 1. = Float.pred 1.);
+assert (f 64 (const 0xFFFFFFFFFFFFFFFFL) (ref 0) 1. = Float.pred 1.);;
+
 prerr_endline "ok";;

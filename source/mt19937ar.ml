@@ -45,12 +45,9 @@ let nativeint: t -> nativeint -> nativeint =
 		fun state bound -> Int64.to_nativeint (int64 state (Int64.of_nativeint bound))
 	);;
 
-let float (state: t) (bound: float) =
-	if bound > 0. then (
-		let x = Int64.shift_right_logical (bits64 state) (64 - 53) in
-		let x = ldexp (Int64.to_float x) (-53) in (* [0,1) *)
-		bound *. x
-	) else invalid_arg "Mt19937ar.float";; (* __FUNCTION__ *)
+let float: t -> float -> float =
+	(Uniform_distribution.float_from_int64_bits [@ocaml.inlined]) ~width:64
+		~bits:bits64;;
 
 let bool (state: t) = bits31 state land 0x40000000 <> 0;;
 

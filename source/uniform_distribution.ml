@@ -143,3 +143,38 @@ let int64_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
 		else invalid_arg loc
 	) else invalid_arg loc
 	[@@inline always];;
+
+let float_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
+	: t -> float -> float =
+	let loc = "Uniform_distribution.float_from_int64_bits" in (* __FUNCTION__ *)
+	if width > 0 && width <= 53 then (
+		let max_bound = Int64.shift_left 1L width in
+		let exp = ~-width in
+		fun state bound ->
+		if bound > 0. then (
+			let x = bits state in
+			assert (Int64.unsigned_compare x max_bound < 0);
+			let x = ldexp (Int64.to_float x) exp in (* [0,1) *)
+			bound *. x
+		) else invalid_arg loc
+	) else if width >= 53 && width < 64 then (
+		let max_bound = Int64.shift_left 1L width in
+		let shift = width - 53 in
+		fun state bound ->
+		if bound > 0. then (
+			let x = bits state in
+			assert (Int64.unsigned_compare x max_bound < 0);
+			let x = Int64.shift_right_logical x shift in
+			let x = ldexp (Int64.to_float x) (-53) in (* [0,1) *)
+			bound *. x
+		) else invalid_arg loc
+	) else if width = 64 then (
+		fun state bound ->
+		if bound > 0. then (
+			let x = bits state in
+			let x = Int64.shift_right_logical x (64 - 53) in
+			let x = ldexp (Int64.to_float x) (-53) in (* [0,1) *)
+			bound *. x
+		) else invalid_arg loc
+	) else invalid_arg loc
+	[@@inline always];;
