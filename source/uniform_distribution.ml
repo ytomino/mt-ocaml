@@ -112,6 +112,10 @@ let int64 (type t) ~(bits32: t -> int32) ~(bits64: t -> int64) (state: t)
 	if bound > 0L then 0L
 	else invalid_arg "Uniform_distribution.int64";; (* __FUNCTION__ *)
 
+let zero_f _ _ = 0;;
+let zero32_f _ _ = 0l;;
+let zero64_f _ _ = 0L;;
+
 let bind_int (type t) ~(bits32: t -> int32) ~(bits64: t -> int64) (bound: int)
 	: t -> unit -> int =
 	if bound > 1 then (
@@ -134,7 +138,7 @@ let bind_int (type t) ~(bits32: t -> int32) ~(bits64: t -> int64) (bound: int)
 			Int64.to_int x
 		)
 	) else
-	if bound > 0 then (fun _ _ -> 0)
+	if bound > 0 then zero_f
 	else invalid_arg "Uniform_distribution.bind_int" (* __FUNCTION__ *)
 	[@@inline always];;
 
@@ -145,7 +149,7 @@ let bind_int32 (type t) ~(bits32: t -> int32) (bound: int32)
 		let max_dividend = max_dividend32 bound divisor in
 		fun state _ -> draw_div32 bits32 state max_dividend divisor
 	) else
-	if bound > 0l then (fun _ _ -> 0l)
+	if bound > 0l then zero32_f
 	else invalid_arg "Uniform_distribution.bind_int32" (* __FUNCTION__ *)
 	[@@inline always];;
 
@@ -169,7 +173,7 @@ let bind_int64 (type t) ~(bits32: t -> int32) ~(bits64: t -> int64)
 			fun state _ -> draw_div64 bits64 state max_dividend divisor
 		)
 	) else
-	if bound > 0L then (fun _ _ -> 0L)
+	if bound > 0L then zero64_f
 	else invalid_arg "Uniform_distribution.bind_int64" (* __FUNCTION__ *)
 	[@@inline always];;
 
@@ -364,5 +368,97 @@ let float_inclusive_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
 			let x = ldexp (Int64.to_float x) (-53) in (* [0,1] *)
 			bound *. x
 		) else invalid_arg loc
+	) else invalid_arg loc
+	[@@inline always];;
+
+let bind_int_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
+	(bound: int)
+	: t -> unit -> int =
+	let loc = "Uniform_distribution.bind_int_from_int64_bits" in (* __FUNCTION__ *)
+	if width > 0 && width < 64 then (
+		let bound64 = Int64.of_int bound in
+		let max_bound = Int64.shift_left 1L width in
+		if Int64.unsigned_compare (Int64.sub bound64 2L) (Int64.sub max_bound 2L) <= 0
+			(* bound > 1 && bound <= 2 ** n *)
+		then (
+			let divisor = divisor63 max_bound bound64 in
+			let max_dividend = max_dividend63 bound64 divisor in
+			fun state _ ->
+			let x = draw_div63 max_bound bits state max_dividend divisor in
+			Int64.to_int x
+		) else
+		if bound = 1 then zero_f
+		else invalid_arg loc
+	) else if width = 64 then (
+		if bound > 1 then (
+			let bound64 = Int64.of_int bound in
+			let divisor = divisor64 bound64 in
+			let max_dividend = max_dividend64 bound64 divisor in
+			fun state _ ->
+			let x = draw_div64 bits state max_dividend divisor in
+			Int64.to_int x
+		) else
+		if bound > 0 then zero_f
+		else invalid_arg loc
+	) else invalid_arg loc
+	[@@inline always];;
+
+let bind_int32_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
+	(bound: int32)
+	: t -> unit -> int32 =
+	let loc = "Uniform_distribution.bind_int32_from_int64_bits" (* __FUNCTION__ *)
+	in
+	if width > 0 && width < 64 then (
+		let bound64 = Int64.of_int32 bound in
+		let max_bound = Int64.shift_left 1L width in
+		if Int64.unsigned_compare (Int64.sub bound64 2L) (Int64.sub max_bound 2L) <= 0
+			(* bound > 1 && bound <= 2 ** n *)
+		then (
+			let divisor = divisor63 max_bound bound64 in
+			let max_dividend = max_dividend63 bound64 divisor in
+			fun state _ ->
+			let x = draw_div63 max_bound bits state max_dividend divisor in
+			Int64.to_int32 x
+		) else
+		if bound = 1l then zero32_f
+		else invalid_arg loc
+	) else if width = 64 then (
+		if bound > 1l then (
+			let bound64 = Int64.of_int32 bound in
+			let divisor = divisor64 bound64 in
+			let max_dividend = max_dividend64 bound64 divisor in
+			fun state _ ->
+			let x = draw_div64 bits state max_dividend divisor in
+			Int64.to_int32 x
+		) else
+		if bound > 0l then zero32_f
+		else invalid_arg loc
+	) else invalid_arg loc
+	[@@inline always];;
+
+let bind_int64_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
+	(bound: int64)
+	: t -> unit -> int64 =
+	let loc = "Uniform_distribution.bind_int64_from_int64_bits" (* __FUNCTION__ *)
+	in
+	if width > 0 && width < 64 then (
+		let max_bound = Int64.shift_left 1L width in
+		if Int64.unsigned_compare (Int64.sub bound 2L) (Int64.sub max_bound 2L) <= 0
+			(* bound > 1 && bound <= 2 ** n *)
+		then (
+			let divisor = divisor63 max_bound bound in
+			let max_dividend = max_dividend63 bound divisor in
+			fun state _ -> draw_div63 max_bound bits state max_dividend divisor
+		) else
+		if bound = 1L then zero64_f
+		else invalid_arg loc
+	) else if width = 64 then (
+		if bound > 1L then (
+			let divisor = divisor64 bound in
+			let max_dividend = max_dividend64 bound divisor in
+			fun state _ -> draw_div64 bits state max_dividend divisor
+		) else
+		if bound > 0L then zero64_f
+		else invalid_arg loc
 	) else invalid_arg loc
 	[@@inline always];;
