@@ -9,3 +9,7 @@ val int64_from_int64_bits: width:int -> bits:('a -> int64) -> 'a -> int64 ->
 	int64
 val float_from_int64_bits: width:int -> bits:('a -> int64) -> 'a -> float ->
 	float (* [0,bound) *)
+val float_exclusive_from_int64_bits: width:int -> bits:('a -> int64) -> 'a ->
+	float -> float (* (0,bound) *)
+val float_inclusive_from_int64_bits: width:int -> bits:('a -> int64) -> 'a ->
+	float -> float (* [0,bound] *)

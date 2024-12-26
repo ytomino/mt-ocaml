@@ -16,7 +16,7 @@ let raw_int32: type t. (t -> int32) -> t -> int32 -> int32 =
 	let m = Int32.pred (Int32.mul bound d) in
 	Int32.unsigned_div (draw32 bits32 state m) d;;
 
-let raw_int63: type t. int64 -> (t -> int64) -> t -> int64 -> int64 =
+let draw63: type t. int64 -> (t -> int64) -> t -> int64 -> int64 =
 	let rec draw63 max_bound bits state max_dividend =
 		let x = bits state in
 		assert (Int64.unsigned_compare x max_bound < 0);
@@ -24,23 +24,47 @@ let raw_int63: type t. int64 -> (t -> int64) -> t -> int64 -> int64 =
 		if x <= max_dividend then x
 		else draw63 max_bound bits state max_dividend
 	in
-	fun max_bound bits state bound ->
-	(* Int64.sub max_bound bound >= 0L && bound > 1L *)
-	let d = Int64.succ (Int64.div (Int64.sub max_bound bound) bound) in
-	let m = Int64.pred (Int64.mul bound d) in
-	(* m > 0L && d > 0L *)
-	Int64.div (draw63 max_bound bits state m) d;;
+	draw63;;
 
-let raw_int64: type t. (t -> int64) -> t -> int64 -> int64 =
+let divisor63 (max_bound: int64) (bound: int64) =
+	(* Int64.sub max_bound bound >= 0L && bound > 1L *)
+	Int64.succ (Int64.div (Int64.sub max_bound bound) bound);;
+
+let max_dividend63 (bound: int64) (divisor: int64) =
+	Int64.pred (Int64.mul bound divisor);;
+
+let draw_div63 (type t) (max_bound: int64) (bits: t -> int64) (state: t)
+	(max_dividend: int64) (divisor: int64) =
+	(* m > 0L && d > 0L *)
+	Int64.div (draw63 max_bound bits state max_dividend) divisor;;
+
+let raw_int63 (type t) (max_bound: int64) (bits: t -> int64) (state: t)
+	(bound: int64) =
+	let d = divisor63 max_bound bound in
+	let m = max_dividend63 bound d in
+	draw_div63 max_bound bits state m d;;
+
+let draw64: type t. (t -> int64) -> t -> int64 -> int64 =
 	let rec draw64 bits64 state max_dividend =
 		let x = bits64 state in
 		if Int64.unsigned_compare x max_dividend <= 0 then x
 		else draw64 bits64 state max_dividend
 	in
-	fun bits64 state bound ->
-	let d = Int64.succ (Int64.unsigned_div (Int64.sub Int64.zero bound) bound) in
-	let m = Int64.pred (Int64.mul bound d) in
-	Int64.unsigned_div (draw64 bits64 state m) d;;
+	draw64;;
+
+let divisor64 (bound: int64) =
+	Int64.succ (Int64.unsigned_div (Int64.sub Int64.zero bound) bound);;
+
+let max_dividend64: int64 -> int64 -> int64 = max_dividend63;;
+
+let draw_div64 (type t) (bits: t -> int64) (state: t) (max_dividend: int64)
+	(divisor: int64) =
+	Int64.unsigned_div (draw64 bits state max_dividend) divisor;;
+
+let raw_int64 (type t) (bits64: t -> int64) (state: t) (bound: int64) =
+	let d = divisor64 bound in
+	let m = max_dividend64 bound d in
+	draw_div64 bits64 state m d;;
 
 let int (type t) ~(bits32: t -> int32) ~(bits64: t -> int64) (state: t)
 	(bound: int) =
@@ -174,6 +198,97 @@ let float_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
 			let x = bits state in
 			let x = Int64.shift_right_logical x (64 - 53) in
 			let x = ldexp (Int64.to_float x) (-53) in (* [0,1) *)
+			bound *. x
+		) else invalid_arg loc
+	) else invalid_arg loc
+	[@@inline always];;
+
+let fe53_bound = 0x1FFFFFFFFFFFFFL;;
+let fe64_divisor = divisor64 fe53_bound;;
+let fe64_max_dividend = max_dividend64 fe53_bound fe64_divisor;;
+
+let float_exclusive_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
+	: t -> float -> float =
+	let loc =
+		"Uniform_distribution.float_exclusive_from_int64_bits" (* __FUNCTION__ *)
+	in
+	if width > 1 && width <= 53 then (
+		let fe_max_bound = Int64.shift_left 1L width in
+		let fe_bound = Int64.pred fe_max_bound in
+		let fe_divisor = 1L in (* divisor63 fe_max_bound fe_bound *)
+		let fe_max_dividend = max_dividend63 fe_bound fe_divisor in
+		let exp = ~-width in
+		fun state bound ->
+		if bound > 0. then (
+			let x =
+				draw63 fe_max_bound bits state fe_max_dividend
+					(* draw_div63 fe_max_bound bits state fe_max_dividend fe_divisor *)
+			in
+			let x = Int64.succ x in
+			let x = ldexp (Int64.to_float x) exp in (* (0,1) *)
+			bound *. x
+		) else invalid_arg loc
+	) else if width >= 53 && width < 64 then (
+		let fe_max_bound = Int64.shift_left 1L width in
+		let fe_divisor = divisor63 fe_max_bound fe53_bound in
+		let fe_max_dividend = max_dividend63 fe53_bound fe_divisor in
+		fun state bound ->
+		if bound > 0. then (
+			let x = draw_div63 fe_max_bound bits state fe_max_dividend fe_divisor in
+			let x = Int64.succ x in
+			let x = ldexp (Int64.to_float x) (-53) in (* (0,1) *)
+			bound *. x
+		) else invalid_arg loc
+	) else if width = 64 then (
+		fun state bound ->
+		if bound > 0. then (
+			let x = draw_div64 bits state fe64_max_dividend fe64_divisor in
+			let x = Int64.succ x in
+			let x = ldexp (Int64.to_float x) (-53) in (* (0,1) *)
+			bound *. x
+		) else invalid_arg loc
+	) else invalid_arg loc
+	[@@inline always];;
+
+let fi53_bound = 0x20000000000001L;;
+let fi64_divisor = divisor64 fi53_bound;;
+let fi64_max_dividend = max_dividend64 fi53_bound fi64_divisor;;
+
+let float_inclusive_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
+	: t -> float -> float =
+	let loc =
+		"Uniform_distribution.float_inclusive_from_int64_bits" (* __FUNCTION__ *)
+	in
+	if width > 0 && width <= 54 then (
+		let fi_max_bound = Int64.shift_left 1L width in
+		let fi_bound = Int64.succ (Int64.shift_right_logical fi_max_bound 1) in
+		let fi_divisor = 1L in (* divisor63 fi_max_bound fi_bound *)
+		let fi_max_dividend = max_dividend63 fi_bound fi_divisor in
+		let exp = ~-(width - 1) in
+		fun state bound ->
+		if bound > 0. then (
+			let x =
+				draw63 fi_max_bound bits state fi_max_dividend
+					(* draw_div63 fe_max_bound bits state fe_max_dividend fe_divisor *)
+			in
+			let x = ldexp (Int64.to_float x) exp in (* [0,1] *)
+			bound *. x
+		) else invalid_arg loc
+	) else if width >= 54 && width < 64 then (
+		let fi_max_bound = Int64.shift_left 1L width in
+		let fi_divisor = divisor63 fi_max_bound fi53_bound in
+		let fi_max_dividend = max_dividend63 fi53_bound fi_divisor in
+		fun state bound ->
+		if bound > 0. then (
+			let x = draw_div63 fi_max_bound bits state fi_max_dividend fi_divisor in
+			let x = ldexp (Int64.to_float x) (-53) in (* [0,1] *)
+			bound *. x
+		) else invalid_arg loc
+	) else if width = 64 then (
+		fun state bound ->
+		if bound > 0. then (
+			let x = draw_div64 bits state fi64_max_dividend fi64_divisor in
+			let x = ldexp (Int64.to_float x) (-53) in (* [0,1] *)
 			bound *. x
 		) else invalid_arg loc
 	) else invalid_arg loc

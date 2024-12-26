@@ -16,9 +16,9 @@ let of_array (type t) (xs: t array) (state: int ref) =
 		xs.(i)
 	) else invalid_arg "index out of bounds";;
 
-let try_invalid_argument (type t) (message: string) (f: t -> t) (bound: t) =
+let try_invalid_argument (type t u) (message: string) (f: t -> u) (bound: t) =
 	try
-		let _: t = f bound in
+		let _: u = f bound in
 		false
 	with
 	| Invalid_argument m -> m = message;;
@@ -31,6 +31,8 @@ let try_int32_from_int64_bits =
 	try_invalid_argument "Uniform_distribution.int32_from_int64_bits";;
 let try_int64_from_int64_bits =
 	try_invalid_argument "Uniform_distribution.int64_from_int64_bits";;
+let try_float_exclusive_from_int64_bits =
+	try_invalid_argument "Uniform_distribution.float_exclusive_from_int64_bits";;
 
 (* 2**0 *)
 let bound = 1 in
@@ -404,5 +406,85 @@ assert (
 );
 assert (f 64 (const 0xFFFFFFFFFFFFF800L) (ref 0) 1. = Float.pred 1.);
 assert (f 64 (const 0xFFFFFFFFFFFFFFFFL) (ref 0) 1. = Float.pred 1.);;
+
+(* float_exclusive_from_int64_bits *)
+let f width bits = float_exclusive_from_int64_bits ~width ~bits in
+assert (
+	try_float_exclusive_from_int64_bits
+		(f 1: (unit -> int64) -> unit -> float -> float) nocall
+);
+(*
+assert (f 1 (const 0L) (ref 0) 1. = 0.5);
+assert (f 1 (const 1L) (ref 0) 1. = 0.5);
+*)
+for i = 2 to 53 do
+	assert (f i (const 0L) (ref 0) 1. = ldexp 1. ~-i);
+	let mb = Int64.shift_left 1L i in
+	let b = Int64.pred mb in
+	let d = Int64.unsigned_div mb b in
+	let m = Int64.pred (Int64.mul b d) in
+	assert (f i (const (Int64.shift_right_logical m 1)) (ref 0) 1. = 0.5);
+	assert (f i (const m) (ref 0) 1. = 1. -. ldexp 1. ~-i);
+	assert (try_get (f i (const (Int64.succ m)) (ref 0)) 1.);
+	assert (try_get (f i (const (Int64.pred (Int64.shift_left 1L i))) (ref 0)) 1.)
+done;
+for i = 54 to 63 do
+	assert (f i (const 0L) (ref 0) 1. = 0x1p-53);
+	let mb = Int64.shift_left 1L i in
+	let d = Int64.unsigned_div mb 0x1FFFFFFFFFFFFFL in
+	let m = Int64.pred (Int64.mul 0x1FFFFFFFFFFFFFL d) in
+	assert (f i (const (Int64.shift_right_logical m 1)) (ref 0) 1. = 0.5);
+	assert (f i (const m) (ref 0) 1. = Float.pred 1.);
+	assert (try_get (f i (const (Int64.succ m)) (ref 0)) 1.);
+	assert (try_get (f i (const (Int64.pred (Int64.shift_left 1L i))) (ref 0)) 1.)
+done;
+assert (f 64 (const 0L) (ref 0) 1. = 0x1p-53);
+assert (f 64 (const 0x7FFL) (ref 0) 1. = 0x1p-53);
+assert (f 64 (const 0x800L) (ref 0) 1. = 0x1p-52);
+assert (f 64 (const 0x7FFFFFFFFFFFFFFFL) (ref 0) 1. = 0.5);
+assert (f 64 (const 0x8000000000000000L) (ref 0) 1. = Float.succ 0.5);
+assert (
+	f 64 (const 0xFFFFFFFFFFFFEFFFL) (ref 0) 1. = Float.pred (Float.pred 1.)
+);
+assert (f 64 (const 0xFFFFFFFFFFFFF000L) (ref 0) 1. = Float.pred 1.);
+assert (f 64 (const 0xFFFFFFFFFFFFF7FFL) (ref 0) 1. = Float.pred 1.);
+assert (try_get (f 64 (const 0xFFFFFFFFFFFFF800L) (ref 0)) 1.);
+assert (try_get (f 64 (const 0xFFFFFFFFFFFFFFFFL) (ref 0)) 1.);;
+
+(* float_inclusive_from_int64_bits *)
+let f width bits = float_inclusive_from_int64_bits ~width ~bits in
+assert (f 1 (const 0L) (ref 0) 1. = 0.);
+assert (f 1 (const 1L) (ref 0) 1. = 1.);
+for i = 2 to 54 do
+	assert (f i (const 0L) (ref 0) 1. = 0.);
+	assert (f i (const (Int64.shift_left 1L (i - 2))) (ref 0) 1. = 0.5);
+	assert (f i (const (Int64.shift_left 1L (i - 1))) (ref 0) 1. = 1.);
+	assert (
+		try_get (f i (const (Int64.succ (Int64.shift_left 1L (i - 1)))) (ref 0)) 1.
+	);
+	assert (try_get (f i (const (Int64.pred (Int64.shift_left 1L i))) (ref 0)) 1.)
+done;
+for i = 55 to 63 do
+	assert (f i (const 0L) (ref 0) 1. = 0.);
+	let d = Int64.unsigned_div (Int64.shift_left 1L i) 0x20000000000001L in
+	let m = Int64.pred (Int64.mul 0x20000000000001L d) in
+	assert (f i (const (Int64.shift_right_logical m 1)) (ref 0) 1. = 0.5);
+	assert (f i (const m) (ref 0) 1. = 1.);
+	assert (try_get (f i (const (Int64.succ m)) (ref 0)) 1.);
+	assert (try_get (f i (const (Int64.pred (Int64.shift_left 1L i))) (ref 0)) 1.)
+done;
+assert (f 64 (const 0L) (ref 0) 1. = 0.);
+assert (f 64 (const 0x7FEL) (ref 0) 1. = 0.);
+assert (f 64 (const 0x7FFL) (ref 0) 1. = 0x1p-53);
+assert (
+	f 64 (const 0x7FEFFFFFFFFFFFFFL) (ref 0) 1. = Float.pred (Float.pred 0.5)
+	(* 54th bit is not generated *)
+);
+assert (f 64 (const 0x7FF0000000000000L) (ref 0) 1. = 0.5);
+assert (f 64 (const 0xFFDFFFFFFFFFFFFFL) (ref 0) 1. = Float.pred 1.);
+assert (f 64 (const 0xFFE0000000000000L) (ref 0) 1. = 1.);
+assert (f 64 (const 0xFFE00000000007FEL) (ref 0) 1. = 1.);
+assert (try_get (f 64 (const 0xFFE00000000007FFL) (ref 0)) 1.);
+assert (try_get (f 64 (const 0xFFFFFFFFFFFFFFFFL) (ref 0)) 1.);;
 
 prerr_endline "ok";;
