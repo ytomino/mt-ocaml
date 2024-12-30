@@ -1,9 +1,26 @@
+(** SIMD oriented Fast Mersenne Twister pseudorandom number generator, with the
+    period 2^${SFMT_MEXP} - 1 in 32 bit units. *)
+
+(** {1 Information} *)
+
 external get_id_string: unit -> string = "mlmt_sfmt_${SFMT_MEXP}_get_id_string"
+(** The identification string of this generator.
+    It is the value of {e SFMT_IDSTR}. *)
 
 val min_int32_array_length: int
+(** The minimum length of array used for {!fill_int32_bigarray}.
+    It is the value of {e SFMT_N32}. *)
+
 val min_int64_array_length: int
+(** The minimum length of array used for {!fill_int64_bigarray}.
+    It is the value of {e SFMT_N64}. *)
+
+(** {1 Generator} *)
 
 type t
+(** The type of the state. *)
+
+(** {2 Initialization} *)
 
 external make_int32: int32 -> t = "mlmt_sfmt_${SFMT_MEXP}_make_int32"
 external make_int32_array: int32 array -> t =
@@ -13,34 +30,74 @@ val make_self_init: unit -> t
 
 external copy: t -> t = "mlmt_sfmt_${SFMT_MEXP}_copy"
 
+(** {2 Bit generation} *)
+
 external bits32: t -> (int32 [@ocaml.unboxed]) =
 	"mlmt_sfmt_${SFMT_MEXP}_bits32" "mlmt_sfmt_${SFMT_MEXP}_bits32_unboxed"
 	[@@ocaml.noalloc]
+(** Draws out 32 bits.
+    It calls {e sfmt_genrand_uint32}. *)
+
 external bits64: t -> (int64 [@ocaml.unboxed]) =
 	"mlmt_sfmt_${SFMT_MEXP}_bits64" "mlmt_sfmt_${SFMT_MEXP}_bits64_unboxed"
 	[@@ocaml.noalloc]
+(** Draws out 64 bits.
+    It calls {e sfmt_genrand_uint64}. *)
+
 external float_bits32: t -> (float [@ocaml.unboxed]) =
 	"mlmt_sfmt_${SFMT_MEXP}_float_bits32"
 	"mlmt_sfmt_${SFMT_MEXP}_float_bits32_unboxed"
 	[@@ocaml.noalloc]
+(** Draws out 32 bits as [float] \[0,1).
+    It calls {e sfmt_genrand_real2}. *)
+
 external float_bits53: t -> (float [@ocaml.unboxed]) =
 	"mlmt_sfmt_${SFMT_MEXP}_float_bits53"
 	"mlmt_sfmt_${SFMT_MEXP}_float_bits53_unboxed"
 	[@@ocaml.noalloc]
+(** Draws out 53 bits of higher part of 64 bits as [float] \[0,1).
+    It calls {e sfmt_genrand_res53}. *)
 
 val fill_int32_bigarray: t ->
 	(int32, Bigarray.int32_elt, Bigarray.c_layout) Bigarray.Array1.t -> int ->
 	int -> unit
+(** Draws out 32 bit values into the specified bigarray by one call.
+    The length of the array must be at least {!min_int32_array_length} and a
+    multiple of four.
+    This can not be used after calling one of the functions drawing out an
+    individual value.
+    It calls {e sfmt_fill_array32}. *)
+
 val fill_int64_bigarray: t ->
 	(int64, Bigarray.int64_elt, Bigarray.c_layout) Bigarray.Array1.t -> int ->
 	int -> unit
+(** Draws out 64 bit values into the specified bigarray by one call.
+    The length of the array must be at least {!min_int64_array_length} and a
+    multiple of two.
+    This can not be used after calling one of the functions drawing out an
+    individual value.
+    It calls {e sfmt_fill_array64}. *)
+
+(** {2 Uniform distribution} *)
 
 val int: t -> int -> int
+(** \[0,[bound]).
+    Draws out values repeatedly as needed in 32 bit units if the [bound] fits
+    into 32 bits otherwise 64 bit units. *)
+
 val int32: t -> int32 -> int32
 val int64: t -> int64 -> int64
 val nativeint: t -> nativeint -> nativeint
-val float: t -> float -> float (* [0,bound), unlike Stdlib.Random.float *)
+
+val float: t -> float -> float
+(** \[0,[bound]), unlike [Stdlib.Random.float].
+    Draws out 64 bits once. *)
+
 val bool: t -> bool
+(** [false] or [true].
+    Draws out 32 bits once. *)
+
+(** {2 Serialization} *)
 
 val import: int32 array * int -> t
 external export: t -> int32 array * int = "mlmt_sfmt_${SFMT_MEXP}_export"

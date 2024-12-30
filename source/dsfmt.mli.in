@@ -1,10 +1,30 @@
+(** double precision SIMD oriented Fast Mersenne Twister pseudorandom number
+    generator based on IEEE 754 format, with the period 2^${DSFMT_MEXP} - 1 in
+    52 bit units. *)
+
+(** {1 Information} *)
+
 external get_id_string: unit -> string =
 	"mlmt_dsfmt_${DSFMT_MEXP}_get_id_string"
+(** The identification string of this generator.
+    It calls {e dsfmt_get_idstring}. *)
 
 val dsfmt_n: int
+(** The length of the state array in 128 bit units.
+    Actually, one more element is used for {e lung}.
+    The value of {e DSFMT_N}. *)
+
 val min_float_array_length: int
+(** The minimum length of array used for {!fill_floatarray52} and
+    {!fill_floatarray52p1}.
+    It is the value of {e DSFMT_N64}. *)
+
+(** {1 Generator} *)
 
 type t
+(** The type of the state. *)
+
+(** {2 Initialization} *)
 
 external make_int32: int32 -> t = "mlmt_dsfmt_${DSFMT_MEXP}_make_int32"
 external make_int32_array: int32 array -> t =
@@ -14,27 +34,62 @@ val make_self_init: unit -> t
 
 external copy: t -> t = "mlmt_dsfmt_${DSFMT_MEXP}_copy"
 
+(** {2 Bit generation} *)
+
 external bits52: t -> (int64 [@ocaml.unboxed]) =
 	"mlmt_dsfmt_${DSFMT_MEXP}_bits52" "mlmt_dsfmt_${DSFMT_MEXP}_bits52_unboxed"
 	[@@ocaml.noalloc]
+(** Draws out 52 bits of the mantissa part without implicit 1 called economized
+    form.
+    The result equals to {!float_bits52} multiplied by 2^52. *)
+
 external float_bits52: t -> (float [@ocaml.unboxed]) =
 	"mlmt_dsfmt_${DSFMT_MEXP}_float_bits52"
 	"mlmt_dsfmt_${DSFMT_MEXP}_float_bits52_unboxed"
 	[@@ocaml.noalloc]
+(** Draws out 52 bits as [float] \[0,1).
+    It calls {e dsfmt_genrand_close_open}. *)
+
 external float_bits52p1: t -> (float [@ocaml.unboxed]) =
 	"mlmt_dsfmt_${DSFMT_MEXP}_float_bits52p1"
 	"mlmt_dsfmt_${DSFMT_MEXP}_float_bits52p1_unboxed"
-	[@@ocaml.noalloc] (* [1,2) *)
+	[@@ocaml.noalloc]
+(** Like {!float_bits52} except the range of value is \[1,2).
+    It calls {e dsfmt_genrand_close1_open2}. *)
 
 val fill_floatarray52: t -> floatarray -> int -> int -> unit
-val fill_floatarray52p1: t -> floatarray -> int -> int -> unit (* [1,2) *)
+(** Draws out 52 bit values as [float] \[0,1) into the specified [floatarray]
+    by one call.
+    The length of the array must be at least {!min_float_array_length} and a
+    multiple of two.
+    This can not be used after calling one of the functions drawing out an
+    individual value.
+    It calls {e dsfmt_fill_array_close_open}. *)
+
+val fill_floatarray52p1: t -> floatarray -> int -> int -> unit
+(** Like {!fill_floatarray52} except the range of values is \[1,2).
+    It calls {e dsfmt_fill_array_close1_open2}. *)
+
+(** {2 Uniform distribution} *)
 
 val int: t -> int -> int
+(** \[0,[bound]).
+    Draws out values repeatedly as needed in 52 bit units.
+    [bound] must be fits into 52 bits. *)
+
 val int32: t -> int32 -> int32
 val int64: t -> int64 -> int64
 val nativeint: t -> nativeint -> nativeint
-val float: t -> float -> float (* [0,bound), unlike Stdlib.Random.float *)
+
+val float: t -> float -> float
+(** \[0,[bound]), unlike [Stdlib.Random.float].
+    Draws out 52 bits once. *)
+
 val bool: t -> bool
+(** [false] or [true].
+    Draws out 52 bits once. *)
+
+(** {2 Serialization} *)
 
 val import: int32 array * int -> t
 external export: t -> int32 array * int = "mlmt_dsfmt_${DSFMT_MEXP}_export"
