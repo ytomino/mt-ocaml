@@ -54,7 +54,7 @@ let raw_int63 (type t) (max_bound: int64) (bits: t -> int64) (state: t)
 	(bound: int64) =
 	let d = divisor63 max_bound bound in
 	let m = max_dividend63 bound d in
-	draw_div63 max_bound bits state m d;;
+	(draw_div63 [@ocaml.inlined]) max_bound bits state m d;;
 
 let draw64: type t. (t -> int64) -> t -> int64 -> int64 =
 	let rec draw64 bits64 state max_dividend =
@@ -186,7 +186,7 @@ let int_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
 		let bound64 = Int64.of_int bound in
 		if Int64.unsigned_compare (Int64.sub bound64 2L) (Int64.sub max_bound 2L) <= 0
 			(* bound > 1 && bound <= 2 ** n *)
-		then Int64.to_int (raw_int63 max_bound bits state bound64)
+		then Int64.to_int ((raw_int63 [@ocaml.inlined]) max_bound bits state bound64)
 		else
 		if bound = 1 then 0
 		else invalid_arg loc
@@ -210,7 +210,7 @@ let int32_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
 		let bound64 = Int64.of_int32 bound in
 		if Int64.unsigned_compare (Int64.sub bound64 2L) (Int64.sub max_bound 2L) <= 0
 			(* bound > 1 && bound <= 2 ** n *)
-		then Int64.to_int32 (raw_int63 max_bound bits state bound64)
+		then Int64.to_int32 ((raw_int63 [@ocaml.inlined]) max_bound bits state bound64)
 		else
 		if bound = 1l then 0l
 		else invalid_arg loc
@@ -311,7 +311,10 @@ let float_exclusive_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
 		let fe_max_dividend = max_dividend63 fe53_bound fe_divisor in
 		fun state bound ->
 		if bound > 0. then (
-			let x = draw_div63 fe_max_bound bits state fe_max_dividend fe_divisor in
+			let x =
+				(draw_div63 [@ocaml.inlined]) fe_max_bound bits state fe_max_dividend
+					fe_divisor
+			in
 			let x = Int64.succ x in
 			let x = ldexp (Int64.to_float x) (-53) in (* (0,1) *)
 			bound *. x
@@ -357,7 +360,10 @@ let float_inclusive_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
 		let fi_max_dividend = max_dividend63 fi53_bound fi_divisor in
 		fun state bound ->
 		if bound > 0. then (
-			let x = draw_div63 fi_max_bound bits state fi_max_dividend fi_divisor in
+			let x =
+				(draw_div63 [@ocaml.inlined]) fi_max_bound bits state fi_max_dividend
+					fi_divisor
+			in
 			let x = ldexp (Int64.to_float x) (-53) in (* [0,1] *)
 			bound *. x
 		) else invalid_arg loc
@@ -384,7 +390,9 @@ let bind_int_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
 			let divisor = divisor63 max_bound bound64 in
 			let max_dividend = max_dividend63 bound64 divisor in
 			fun state _ ->
-			let x = draw_div63 max_bound bits state max_dividend divisor in
+			let x =
+				(draw_div63 [@ocaml.inlined]) max_bound bits state max_dividend divisor
+			in
 			Int64.to_int x
 		) else
 		if bound = 1 then zero_f
@@ -417,7 +425,9 @@ let bind_int32_from_int64_bits (type t) ~(width: int) ~(bits: t -> int64)
 			let divisor = divisor63 max_bound bound64 in
 			let max_dividend = max_dividend63 bound64 divisor in
 			fun state _ ->
-			let x = draw_div63 max_bound bits state max_dividend divisor in
+			let x =
+				(draw_div63 [@ocaml.inlined]) max_bound bits state max_dividend divisor
+			in
 			Int64.to_int32 x
 		) else
 		if bound = 1l then zero32_f
